@@ -20,6 +20,12 @@ Both tools below sit at **Tier A** for premium landing page and product UI work.
 | **Category** | Design / UI Direction |
 | **EMOVEL Score** | 9 / 10 |
 | **Format** | Skill / Prompt System |
+| **Local ZIP** | `C:\Users\flavi\Downloads\ui-ux-pro-max-skill-main.zip` |
+| **ZIP Size** | 4.8 MB |
+| **Status** | ZIP found — not yet extracted |
+| **npm name** | `uipro-cli` v2.5.0 |
+| **Runtime** | Python 3.x + Node.js |
+| **Extract to** | `C:\EMOVEL\04_AI_STACK\ui-ux-pro-max-skill-main` |
 
 ### Role
 
@@ -68,6 +74,12 @@ In the EMOVEL flow:
 - Consumed by: `emovel.premium_ui_director` skill
 - Works with: 21st.dev component system, Tailwind CSS, shadcn/ui, Next.js App Router
 - Register usage: reference `ui-ux-pro-max-skill-main` in any skill that produces premium page direction
+- **Extract command:**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\ui-ux-pro-max-skill-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\ui-ux-pro-max-skill-main"
+  cd C:\EMOVEL\04_AI_STACK\ui-ux-pro-max-skill-main
+  npm install
+  ```
 
 ---
 
@@ -81,6 +93,12 @@ In the EMOVEL flow:
 | **Category** | Design / UI Components |
 | **EMOVEL Score** | 9 / 10 |
 | **Format** | Component Library / Registry |
+| **Local ZIP** | `C:\Users\flavi\Downloads\21st-sdk-main.zip` |
+| **ZIP Size** | 160 MB (monorepo) |
+| **Status** | ZIP found — not yet extracted |
+| **npm name** | `blank-agent` template (monorepo) |
+| **Runtime** | Node.js / React / Next.js |
+| **Extract to** | `C:\EMOVEL\04_AI_STACK\21st-sdk-main` |
 
 ### Role
 
@@ -129,11 +147,21 @@ npx shadcn@latest add "https://21st.dev/r/<component-name>"
 ### Integration Notes
 
 - Language: React (TypeScript), Tailwind CSS, Framer Motion, shadcn/ui
-- Installation: via 21st.dev registry or `npx shadcn` CLI
+- Installation: via 21st.dev registry or `npx shadcn` CLI — **or** extract local SDK from `C:\Users\flavi\Downloads\21st-sdk-main.zip`
 - EMOVEL brand adaptation required: replace default colors with Signal Blue (#2F6BFF), Electric Mint (#40D9A3), Primary Ink (#101114)
 - Font adaptation required: replace default fonts with Inter Tight / Satoshi (headings), Inter (body), IBM Plex Mono (accents)
 - Works with: Next.js App Router, Tailwind v3/v4, shadcn/ui component system
 - Does not require a login to browse — components are publicly viewable at 21st.dev
+- **Single-component install (no full SDK extraction needed):**
+  ```bash
+  npx shadcn@latest add "https://21st.dev/r/<component-name>"
+  ```
+- **Full SDK extract command:**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\21st-sdk-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\21st-sdk-main"
+  cd C:\EMOVEL\04_AI_STACK\21st-sdk-main
+  npm install
+  ```
 
 ---
 
@@ -160,6 +188,174 @@ Next.js + Tailwind + shadcn (Implementation Layer)
 
 ---
 
+---
+
+## Tool: Quant UX
+
+| Field | Value |
+|---|---|
+| **Name** | Quant UX |
+| **Identifier** | `quant-ux-master` |
+| **Tier** | B |
+| **Category** | Design / UX Research |
+| **EMOVEL Score** | 7 / 10 |
+| **Format** | Vue.js Web Application |
+| **Local ZIP** | `C:\Users\flavi\Downloads\quant-ux-master.zip` |
+| **ZIP Size** | 6.2 MB |
+| **Status** | ZIP found — not yet extracted |
+| **npm name** | `quant-ux` v4.1.23 |
+| **Runtime** | Vue.js / Node.js |
+| **Extract to** | `C:\EMOVEL\04_AI_STACK\quant-ux-master` |
+
+### Role
+
+A self-hosted UX research and prototyping tool for conducting usability tests, generating heatmaps, and capturing interaction analytics against a design prototype — before any live deployment.
+
+### Use Cases
+
+- Testing the EMOVEL landing page prototype with real users before shipping
+- Generating heatmaps of where readers pause and what they ignore
+- Usability testing the 7-skill process flow section
+- Validating CTA placement and pricing section legibility
+- Running pre-launch design validation without external tooling costs
+
+### How EMOVEL Uses It
+
+Quant UX sits in the **UX validation layer** — after UI direction and before live deployment. Once a page is prototyped (in Penpot or as an HTML file), Quant UX can run structured usability sessions to catch layout and hierarchy issues.
+
+### When to Use
+
+- Before launching a premium landing page for the first time
+- When validating a new section layout or pricing structure
+- When running user research for a product above the $500 price point
+
+### When Not to Use
+
+- Do not use for quick, low-stakes pages — the setup cost is not justified
+- Do not use instead of real live-page analytics — Quant UX is for pre-launch prototype testing only
+
+### Integration Notes
+
+- **Extract command:**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\quant-ux-master.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\quant-ux-master"
+  cd C:\EMOVEL\04_AI_STACK\quant-ux-master
+  npm install
+  npm run serve
+  ```
+- Self-hosted at `localhost:8080` by default
+- No cloud account required
+- Outputs shareable test session links and JSON analytics exports
+
+---
+
+## Tool: Nano Banana 2 AI
+
+| Field | Value |
+|---|---|
+| **Name** | Nano Banana 2 AI |
+| **Identifier** | `nano-banana-2-ai-main` |
+| **Tier** | B |
+| **Category** | Content / Image Generation |
+| **EMOVEL Score** | 7 / 10 |
+| **Format** | Next.js Web Application |
+| **Local ZIP** | `C:\Users\flavi\Downloads\nano-banana-2-ai-main.zip` |
+| **ZIP Size** | 587 KB |
+| **Status** | ZIP found — not yet extracted |
+| **npm name** | `v0-nanobanana-template` v0.1.0 |
+| **Runtime** | Next.js / Node.js |
+| **Extract to** | `C:\EMOVEL\04_AI_STACK\nano-banana-2-ai-main` |
+
+### Role
+
+A Next.js frontend for Google Gemini 3.1 Flash Image Model — enables 4K text-to-image generation with 5-character consistency at Flash speeds. Community mirror of the bananaai.run service.
+
+### Use Cases
+
+- Generating hero and lifestyle images for EMOVEL landing pages without stock photos
+- Producing consistent operator/founder workspace visuals for the brand
+- Creating social launch graphics (LinkedIn, X/Twitter, Instagram)
+- Rapid visual iteration during the launch asset production phase
+
+### When to Use
+
+- When the visual brief calls for operator-forward imagery and no photography session is available
+- For rapid content-engine asset production (social posts, email headers)
+- When Gemini 2.5 Pro Image is too slow and Flash quality is sufficient
+
+### When Not to Use
+
+- Do not use for final hero images if photographic quality is required — AI image artefacts are detectable at high zoom
+- Do not use for legally sensitive contexts where image origin disclosure is required
+
+### Integration Notes
+
+- **Extract command:**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\nano-banana-2-ai-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\nano-banana-2-ai-main"
+  cd C:\EMOVEL\04_AI_STACK\nano-banana-2-ai-main
+  npm install
+  npm run dev
+  ```
+- Runs at `localhost:3000` by default
+- Requires a Gemini API key in environment variables
+- Pairs with `awesome-gpt-image-2-api-and-prompts-main` for structured prompt input
+- Also see: `nano-banana-pro-main` (README reference for Gemini 2.5 Pro mode)
+
+---
+
+## Tool: Awesome GPT Image 2 — API & Prompts
+
+| Field | Value |
+|---|---|
+| **Name** | Awesome GPT Image 2 |
+| **Identifier** | `awesome-gpt-image-2-api-and-prompts-main` |
+| **Tier** | B |
+| **Category** | Content / Prompt Library |
+| **EMOVEL Score** | 8 / 10 |
+| **Format** | Prompt Library (Markdown / JSON) |
+| **Local ZIP** | `C:\Users\flavi\Downloads\awesome-gpt-image-2-API-and-Prompts-main.zip` |
+| **ZIP Size** | 245 MB |
+| **Status** | ZIP found — not yet extracted |
+| **Runtime** | No code — reference library only |
+| **License** | CC0 — free for commercial use |
+| **Extract to** | `C:\EMOVEL\04_AI_STACK\awesome-gpt-image-2-prompts` |
+
+### Role
+
+A curated collection of 911 structured prompts for the GPT Image 2 API (DALL-E 3 successor), including the Seedance 2.0 cinematic workflow and multi-language support across 10 languages. Functions as a **prompt reference library**, not a runnable application.
+
+### Use Cases
+
+- Sourcing structured image prompts for EMOVEL landing page hero and section visuals
+- Generating consistent brand-aligned imagery using GPT Image 2 API
+- Feeding structured prompts into n8n workflows for automated content-engine image production
+- Using Seedance 2.0 cinematic workflow for high-quality product launch visuals
+
+### When to Use
+
+- When GPT Image 2 API (OpenAI) is the chosen image generation backend
+- When building n8n automation workflows that need structured prompt templates
+- When visual consistency across a launch series is required and templates save time
+
+### When Not to Use
+
+- Do not use prompts verbatim without adapting to EMOVEL brand direction — the library covers many styles, most of which will not match the EMOVEL visual system
+- Do not expect runnable code — this is a reference library only
+
+### Integration Notes
+
+- **Extract command:**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\awesome-gpt-image-2-API-and-Prompts-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\awesome-gpt-image-2-prompts"
+  ```
+- After extraction, reference prompts from `C:\EMOVEL\04_AI_STACK\awesome-gpt-image-2-prompts\`
+- Pairs with: GPT Image 2 API (OpenAI), n8n workflows, content-engine automation
+- CC0 license — no attribution required, commercially safe
+- 10 languages included — prompts available in EN, ES, PT, JA, KO, DE, FR, TR, ZH, RU
+
+---
+
 ## Registry Entry (for tools.json)
 
 ```json
@@ -170,7 +366,12 @@ Next.js + Tailwind + shadcn (Implementation Layer)
     "tier": "A",
     "role": "Premium UI direction engine — translates brand brief into implementation-ready UX specification",
     "format": "skill",
-    "identifier": "ui-ux-pro-max-skill-main"
+    "identifier": "ui-ux-pro-max-skill-main",
+    "localZip": "C:\\Users\\flavi\\Downloads\\ui-ux-pro-max-skill-main.zip",
+    "status": "zip-not-extracted",
+    "npmName": "uipro-cli",
+    "version": "2.5.0",
+    "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\ui-ux-pro-max-skill-main"
   },
   "21st-dev": {
     "name": "21st.dev",
@@ -178,7 +379,47 @@ Next.js + Tailwind + shadcn (Implementation Layer)
     "tier": "A",
     "role": "Premium React component registry — production-ready components for editorial and conversion-focused pages",
     "format": "component-library",
-    "url": "https://21st.dev"
+    "url": "https://21st.dev",
+    "localZip": "C:\\Users\\flavi\\Downloads\\21st-sdk-main.zip",
+    "status": "zip-not-extracted",
+    "sizeCompressed": "160MB",
+    "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\21st-sdk-main"
+  },
+  "quant-ux": {
+    "name": "Quant UX",
+    "category": "Design",
+    "tier": "B",
+    "role": "Self-hosted UX research and prototyping tool — usability testing and interaction analytics",
+    "format": "vue-app",
+    "localZip": "C:\\Users\\flavi\\Downloads\\quant-ux-master.zip",
+    "status": "zip-not-extracted",
+    "npmName": "quant-ux",
+    "version": "4.1.23",
+    "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\quant-ux-master"
+  },
+  "nano-banana-2-ai": {
+    "name": "Nano Banana 2 AI",
+    "category": "Content",
+    "tier": "B",
+    "role": "Next.js frontend for Gemini 3.1 Flash Image — 4K text-to-image generation for launch asset production",
+    "format": "nextjs-app",
+    "localZip": "C:\\Users\\flavi\\Downloads\\nano-banana-2-ai-main.zip",
+    "status": "zip-not-extracted",
+    "npmName": "v0-nanobanana-template",
+    "version": "0.1.0",
+    "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\nano-banana-2-ai-main"
+  },
+  "awesome-gpt-image-2-prompts": {
+    "name": "Awesome GPT Image 2",
+    "category": "Content",
+    "tier": "B",
+    "role": "911-prompt library for GPT Image 2 API — CC0 licensed, 10 languages, Seedance 2.0 cinematic workflow",
+    "format": "prompt-library",
+    "localZip": "C:\\Users\\flavi\\Downloads\\awesome-gpt-image-2-API-and-Prompts-main.zip",
+    "status": "zip-not-extracted",
+    "license": "CC0",
+    "sizeCompressed": "245MB",
+    "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\awesome-gpt-image-2-prompts"
   }
 }
 ```

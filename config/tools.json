@@ -1,39 +1,171 @@
-﻿{
-    "searchPaths":  [
-                        "C:\\Users\\flavi\\Downloads",
-                        "C:\\Users\\flavi\\Desktop",
-                        "C:\\EMOVEL",
-                        "D:\\EMOVEL",
-                        "E:\\EMOVEL"
-                    ],
-    "tools":  {
-                  "claude-council-main":  {
-                                              "registeredPath":  null,
-                                              "description":  "Decision validation layer"
-                                          },
-                  "claude-cowork":  {
-                                        "registeredPath":  null,
-                                        "description":  "Project coordination layer"
-                                    },
-                  "gpt-pilot-main":  {
-                                         "registeredPath":  "C:\\Users\\flavi\\Desktop\\gpt-pilot-main",
-                                         "description":  "Autonomous app builder (Pythagora)"
-                                     },
-                  "claude-code-main":  {
-                                           "registeredPath":  null,
-                                           "description":  "Dev assistance and file editing"
-                                       },
-                  "n8n-master":  {
-                                     "registeredPath":  null,
-                                     "description":  "Workflow automation"
-                                 },
-                  "knowledge-work-plugins-main":  {
-                                                      "registeredPath":  null,
-                                                      "description":  "Reusable skills and MCP connectors"
-                                                  },
-                  "reflex-main":  {
-                                      "registeredPath":  null,
-                                      "description":  "Python-native reactive UI builder"
-                                  }
-              }
+{
+    "searchPaths": [
+        "C:\\Users\\flavi\\Downloads",
+        "C:\\Users\\flavi\\Desktop",
+        "C:\\EMOVEL",
+        "D:\\EMOVEL",
+        "E:\\EMOVEL"
+    ],
+    "driveStatus": {
+        "C": "exists",
+        "D": "not found",
+        "E": "not found",
+        "F": "exists (scanned — no EMOVEL folder)"
+    },
+    "lastScan": "2026-06-21",
+    "tools": {
+        "claude-council-main": {
+            "registeredPath": null,
+            "status": "not-found",
+            "description": "Decision validation layer",
+            "category": "orchestration",
+            "hasPackageJson": null,
+            "hasReadme": null,
+            "installCommand": null,
+            "integrationNote": "Prompt-based layer — no local install required"
+        },
+        "claude-cowork": {
+            "registeredPath": null,
+            "status": "not-found",
+            "description": "Project coordination layer",
+            "category": "orchestration",
+            "hasPackageJson": null,
+            "hasReadme": null,
+            "installCommand": null,
+            "integrationNote": "Session-based — no local install required"
+        },
+        "gpt-pilot-main": {
+            "registeredPath": "C:\\Users\\flavi\\Desktop\\gpt-pilot-main",
+            "status": "found-extracted",
+            "description": "Autonomous app builder (Pythagora)",
+            "category": "build",
+            "hasPackageJson": null,
+            "hasReadme": null,
+            "installCommand": "pip install -r requirements.txt",
+            "integrationNote": "Python env missing pydantic — run pip install in venv before use"
+        },
+        "claude-code-main": {
+            "registeredPath": null,
+            "status": "not-found",
+            "description": "Dev assistance and file editing",
+            "category": "build",
+            "hasPackageJson": null,
+            "hasReadme": null,
+            "installCommand": null,
+            "integrationNote": "Installed as CLI — no repo needed"
+        },
+        "n8n-master": {
+            "registeredPath": null,
+            "status": "not-found",
+            "description": "Workflow automation",
+            "category": "automation",
+            "hasPackageJson": null,
+            "hasReadme": null,
+            "installCommand": "npx n8n",
+            "integrationNote": "Run via npx or Docker — no local clone required"
+        },
+        "knowledge-work-plugins-main": {
+            "registeredPath": null,
+            "status": "not-found",
+            "description": "Reusable skills and MCP connectors",
+            "category": "knowledge",
+            "hasPackageJson": null,
+            "hasReadme": null,
+            "installCommand": null,
+            "integrationNote": null
+        },
+        "reflex-main": {
+            "registeredPath": "C:\\Users\\flavi\\Desktop\\reflex-main",
+            "status": "found-extracted",
+            "description": "Python-native reactive UI builder",
+            "category": "build",
+            "hasPackageJson": null,
+            "hasReadme": null,
+            "installCommand": "pip install reflex",
+            "integrationNote": "reflex not in PATH — install via pip in active venv"
+        },
+        "ui-ux-pro-max-skill-main": {
+            "registeredPath": "C:\\Users\\flavi\\Downloads\\ui-ux-pro-max-skill-main.zip",
+            "status": "zip-not-extracted",
+            "description": "Premium AI design intelligence CLI — 161 reasoning rules, 67 UI styles",
+            "category": "design",
+            "hasPackageJson": true,
+            "hasReadme": true,
+            "npmName": "uipro-cli",
+            "version": "2.5.0",
+            "runtime": "Python 3.x + Node.js",
+            "installCommand": "Expand-Archive -Path $zip -DestinationPath C:\\EMOVEL\\04_AI_STACK\\ui-ux-pro-max-skill-main; cd C:\\EMOVEL\\04_AI_STACK\\ui-ux-pro-max-skill-main; npm install",
+            "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\ui-ux-pro-max-skill-main",
+            "integrationNote": "Use as direction layer before Next.js page implementation. Feeds into emovel.premium_ui_director skill. Ref: knowledge/stack-library/UX_LAYER.md"
+        },
+        "21st-sdk-main": {
+            "registeredPath": "C:\\Users\\flavi\\Downloads\\21st-sdk-main.zip",
+            "status": "zip-not-extracted",
+            "description": "Open-source SDK + runtime for building, deploying, and embedding 21st Agents (React/Node/Next.js monorepo)",
+            "category": "design",
+            "hasPackageJson": true,
+            "hasReadme": true,
+            "npmName": "blank-agent (template)",
+            "version": "0.0.1",
+            "runtime": "Node.js / React / Next.js",
+            "sizeCompressed": "160 MB",
+            "installCommand": "Expand-Archive -Path $zip -DestinationPath C:\\EMOVEL\\04_AI_STACK\\21st-sdk-main; cd C:\\EMOVEL\\04_AI_STACK\\21st-sdk-main; npm install",
+            "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\21st-sdk-main",
+            "integrationNote": "Component source layer for premium pages. Use with emovel.premium_ui_director. Also consumable via npx shadcn CLI for individual components without full repo extraction. Ref: knowledge/stack-library/UX_LAYER.md"
+        },
+        "quant-ux-master": {
+            "registeredPath": "C:\\Users\\flavi\\Downloads\\quant-ux-master.zip",
+            "status": "zip-not-extracted",
+            "description": "Open-source UX research and prototyping tool — usability testing, heatmaps, interaction analytics",
+            "category": "design",
+            "hasPackageJson": true,
+            "hasReadme": true,
+            "npmName": "quant-ux",
+            "version": "4.1.23",
+            "runtime": "Vue.js / Node.js",
+            "installCommand": "Expand-Archive -Path $zip -DestinationPath C:\\EMOVEL\\04_AI_STACK\\quant-ux-master; cd C:\\EMOVEL\\04_AI_STACK\\quant-ux-master; npm install; npm run serve",
+            "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\quant-ux-master",
+            "integrationNote": "Self-hosted UX research layer — use to prototype and test EMOVEL page designs before live deployment. Optional addition to the design validation flow."
+        },
+        "nano-banana-2-ai-main": {
+            "registeredPath": "C:\\Users\\flavi\\Downloads\\nano-banana-2-ai-main.zip",
+            "status": "zip-not-extracted",
+            "description": "Next.js frontend for Google Gemini 3.1 Flash Image Model — 4K image generation, 5-character consistency",
+            "category": "content",
+            "hasPackageJson": true,
+            "hasReadme": true,
+            "npmName": "v0-nanobanana-template",
+            "version": "0.1.0",
+            "runtime": "Next.js / Node.js",
+            "installCommand": "Expand-Archive -Path $zip -DestinationPath C:\\EMOVEL\\04_AI_STACK\\nano-banana-2-ai-main; cd C:\\EMOVEL\\04_AI_STACK\\nano-banana-2-ai-main; npm install; npm run dev",
+            "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\nano-banana-2-ai-main",
+            "integrationNote": "Use for fast AI image generation in content-engine workflows. Community mirror at bananaai.run. Pairs with awesome-gpt-image-2 prompt library."
+        },
+        "nano-banana-pro-main": {
+            "registeredPath": "C:\\Users\\flavi\\Downloads\\Nano-Banana-Pro-main.zip",
+            "status": "zip-not-extracted",
+            "description": "AI image generator — Gemini 2.5 Pro Image Model, native 2K/4K upscaling, 5-8s generation, 95% character consistency",
+            "category": "content",
+            "hasPackageJson": false,
+            "hasReadme": true,
+            "runtime": "No code — documentation and configuration reference only",
+            "installCommand": null,
+            "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\nano-banana-pro-main",
+            "integrationNote": "README-only package. Extract as reference documentation for Gemini 2.5 Pro image generation. Not a runnable app — use nano-banana-2-ai-main for the executable version."
+        },
+        "awesome-gpt-image-2-api-and-prompts-main": {
+            "registeredPath": "C:\\Users\\flavi\\Downloads\\awesome-gpt-image-2-API-and-Prompts-main.zip",
+            "status": "zip-not-extracted",
+            "description": "Curated collection of 911 prompts for GPT Image 2 API — includes Seedance 2.0 cinematic workflow, 10-language support",
+            "category": "content",
+            "hasPackageJson": false,
+            "hasReadme": true,
+            "runtime": "No code — prompt library (Markdown/JSON)",
+            "sizeCompressed": "245 MB",
+            "license": "CC0",
+            "installCommand": "Expand-Archive -Path $zip -DestinationPath C:\\EMOVEL\\04_AI_STACK\\awesome-gpt-image-2-prompts",
+            "recommendedExtractPath": "C:\\EMOVEL\\04_AI_STACK\\awesome-gpt-image-2-prompts",
+            "integrationNote": "Extract as prompt reference library for content-engine image generation. Pair with nano-banana-2-ai-main or GPT Image 2 API calls in n8n workflows. License CC0 — fully free to use commercially."
+        }
+    }
 }
