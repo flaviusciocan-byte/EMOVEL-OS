@@ -3,6 +3,12 @@ import path from "path";
 import { NextResponse } from "next/server";
 import { generateExecutionPlan, type BuilderTarget, type PublishingTarget } from "@/execution";
 import {
+  createActionQueue,
+  createBuilderCommands,
+  createBuilderWorkspace,
+  createExecutorPrompts
+} from "@/lib/projects";
+import {
   generateMarkdown,
   generatePipelineFiles,
   outputTypes,
@@ -12,7 +18,7 @@ import {
 } from "@/lib/templates";
 
 type SaveRequest = {
-  action: "save-output" | "run-pipeline" | "generate-execution-plan";
+  action: "save-output" | "run-pipeline" | "generate-execution-plan" | "create-workspace";
   projectName?: string;
   prompt?: string;
   projectType?: ProjectType;
@@ -62,6 +68,49 @@ export async function POST(request: Request) {
   const projectDir = path.join(generatedRoot(), slug);
 
   await mkdir(projectDir, { recursive: true });
+
+  if (body.action === "create-workspace") {
+    const pipelineFiles = generatePipelineFiles({ prompt, projectType });
+    const writtenPipelineFiles = await Promise.all(
+      Object.entries(pipelineFiles).map(async ([filename, content]) => {
+        const filePath = path.join(projectDir, filename);
+        await writeFile(filePath, content, "utf8");
+        return filePath;
+      })
+    );
+
+    const executionPlan = generateExecutionPlan({
+      command: prompt,
+      projectName,
+      projectSlug: slug,
+      builderTarget: body.builderTarget,
+      publishingTargets: body.publishingTargets
+    });
+    const executionPlanPath = path.join(projectDir, "execution-plan.md");
+    await writeFile(executionPlanPath, executionPlan, "utf8");
+
+    const actionQueuePath = await createActionQueue(slug);
+    const executorPromptPaths = await createExecutorPrompts(slug);
+    const builderWorkspacePaths = await createBuilderWorkspace(slug);
+    const builderCommandsPath = await createBuilderCommands(slug);
+    const allFiles = [
+      ...writtenPipelineFiles,
+      executionPlanPath,
+      actionQueuePath,
+      ...executorPromptPaths,
+      ...builderWorkspacePaths,
+      builderCommandsPath
+    ];
+
+    return NextResponse.json({
+      ok: true,
+      action: body.action,
+      slug,
+      directory: path.relative(repoRoot(), projectDir),
+      summaryUrl: `/workspace/${slug}`,
+      files: allFiles.map((filePath) => path.relative(repoRoot(), filePath))
+    });
+  }
 
   if (body.action === "generate-execution-plan") {
     const markdown = generateExecutionPlan({

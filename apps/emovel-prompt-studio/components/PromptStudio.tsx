@@ -23,6 +23,7 @@ export function PromptStudio() {
   const [saveStatus, setSaveStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [executionMode, setExecutionMode] = useState(false);
+  const [workspaceMode, setWorkspaceMode] = useState(false);
   const [builderTarget, setBuilderTarget] = useState<BuilderTarget>("GPT-Pilot");
   const [selectedPublishingTargets, setSelectedPublishingTargets] = useState<PublishingTarget[]>([
     "Gumroad",
@@ -84,7 +85,9 @@ export function PromptStudio() {
     URL.revokeObjectURL(url);
   }
 
-  async function saveProject(action: "save-output" | "run-pipeline" | "generate-execution-plan") {
+  async function saveProject(
+    action: "save-output" | "run-pipeline" | "generate-execution-plan" | "create-workspace"
+  ) {
     setIsSaving(true);
     setSaveStatus("");
 
@@ -109,6 +112,7 @@ export function PromptStudio() {
         ok?: boolean;
         directory?: string;
         files?: string[];
+        summaryUrl?: string;
         error?: string;
       };
 
@@ -118,6 +122,10 @@ export function PromptStudio() {
 
       const fileCount = result.files?.length || 0;
       setSaveStatus(`Saved ${fileCount} file${fileCount === 1 ? "" : "s"} to ${result.directory}`);
+
+      if (action === "create-workspace" && result.summaryUrl) {
+        window.location.href = result.summaryUrl;
+      }
     } catch (error) {
       setSaveStatus(error instanceof Error ? error.message : "Unable to save project output.");
     } finally {
@@ -146,20 +154,40 @@ export function PromptStudio() {
         </div>
 
         <div className="mb-5 rounded-emovel border border-line bg-cloud p-4">
-          <label className="flex cursor-pointer items-center justify-between gap-4">
-            <span>
-              <span className="block text-sm font-black">Execution Mode</span>
-              <span className="mt-1 block text-xs font-semibold text-slate-600">
-                Route the prompt into skills, builder target, publishing targets, and a local execution plan.
+          <div className="grid gap-4">
+            <label className="flex cursor-pointer items-center justify-between gap-4">
+              <span>
+                <span className="block text-sm font-black">Execution Mode</span>
+                <span className="mt-1 block text-xs font-semibold text-slate-600">
+                  Route the prompt into skills, builder target, publishing targets, and a local execution plan.
+                </span>
               </span>
-            </span>
-            <input
-              checked={executionMode}
-              className="h-5 w-5 accent-blue"
-              onChange={() => setExecutionMode((current) => !current)}
-              type="checkbox"
-            />
-          </label>
+              <input
+                checked={executionMode}
+                className="h-5 w-5 accent-blue"
+                onChange={() => setExecutionMode((current) => !current)}
+                type="checkbox"
+              />
+            </label>
+            <label className="flex cursor-pointer items-center justify-between gap-4 border-t border-line pt-4">
+              <span>
+                <span className="block text-sm font-black">Workspace Mode</span>
+                <span className="mt-1 block text-xs font-semibold text-slate-600">
+                  Create project files, execution plan, action queue, executor prompts, builder workspace, handoff,
+                  and builder commands in one local action.
+                </span>
+              </span>
+              <input
+                checked={workspaceMode}
+                className="h-5 w-5 accent-blue"
+                onChange={() => {
+                  setWorkspaceMode((current) => !current);
+                  setExecutionMode(true);
+                }}
+                type="checkbox"
+              />
+            </label>
+          </div>
         </div>
 
         <label className="mb-5 block">
@@ -326,6 +354,16 @@ export function PromptStudio() {
               type="button"
             >
               Generate Execution Plan
+            </button>
+          ) : null}
+          {workspaceMode ? (
+            <button
+              className="min-h-12 rounded-emovel bg-mint px-5 py-3 text-sm font-black text-ink transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isSaving}
+              onClick={() => saveProject("create-workspace")}
+              type="button"
+            >
+              Create Workspace
             </button>
           ) : null}
         </div>
