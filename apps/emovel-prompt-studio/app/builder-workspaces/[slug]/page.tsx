@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import { CopyMarkdownButton } from "@/components/CopyMarkdownButton";
-import { projectNameFromSlug, readBuilderWorkspace } from "@/lib/projects";
+import { createBuilderCommands, projectNameFromSlug, readBuilderWorkspace } from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,15 @@ export default async function BuilderWorkspacePage({ params }: BuilderWorkspaceP
     notFound();
   }
 
+  const hasBuilderCommands = files.some((file) => file.filename === "BUILDER_COMMANDS.md" && file.exists);
+
+  async function createBuilderCommandsAction() {
+    "use server";
+
+    await createBuilderCommands(params.slug);
+    revalidatePath(`/builder-workspaces/${params.slug}`);
+  }
+
   return (
     <main className="mx-auto max-w-7xl px-5 py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -40,17 +50,43 @@ export default async function BuilderWorkspacePage({ params }: BuilderWorkspaceP
             projects/build-workspaces/{params.slug}/
           </p>
         </div>
-        <Link
-          className="rounded-emovel border border-line bg-white px-5 py-3 font-black"
-          href={`/projects/${params.slug}`}
-        >
-          Back to Project
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            className="rounded-emovel border border-line bg-white px-5 py-3 font-black"
+            href={`/projects/${params.slug}`}
+          >
+            Back to Project
+          </Link>
+        </div>
       </div>
 
       <p className="mb-5 rounded-emovel border border-line bg-white p-4 font-mono text-xs font-bold text-slate-600">
         Prep only: Prompt Studio has not run GPT-Pilot, Pythagora, shell commands, paid APIs, or database actions.
       </p>
+      <section className="mb-5 rounded-emovel border border-line bg-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-blue">
+              Builder Commands
+            </p>
+            <h2 className="mt-2 text-2xl font-black tracking-[-0.03em]">
+              Manual GPT-Pilot command packet
+            </h2>
+          </div>
+          <form action={createBuilderCommandsAction}>
+            <button
+              className="rounded-emovel bg-ink px-5 py-3 font-black text-white transition hover:-translate-y-0.5"
+              type="submit"
+            >
+              {hasBuilderCommands ? "Refresh Builder Commands" : "Generate Builder Commands"}
+            </button>
+          </form>
+        </div>
+        <p className="mt-3 max-w-3xl leading-7 text-slate-600">
+          Generates BUILDER_COMMANDS.md from config/tools.json with the registered GPT-Pilot path,
+          recommended manual command, expected output folder, and safety notes.
+        </p>
+      </section>
 
       <section className="grid gap-4">
         {files.map((file) => (
