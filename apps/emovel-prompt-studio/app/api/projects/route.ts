@@ -6,7 +6,10 @@ import {
   createActionQueue,
   createBuilderCommands,
   createBuilderWorkspace,
-  createExecutorPrompts
+  createExecutorPrompts,
+  createPublishPackage,
+  updateBuildStatus,
+  updateShopStatus
 } from "@/lib/projects";
 import {
   generateMarkdown,
@@ -93,13 +96,19 @@ export async function POST(request: Request) {
     const executorPromptPaths = await createExecutorPrompts(slug);
     const builderWorkspacePaths = await createBuilderWorkspace(slug);
     const builderCommandsPath = await createBuilderCommands(slug);
+    const publishPackagePaths = await createPublishPackage(slug);
+    const buildStatusPath = await updateBuildStatus(slug, "Ready to Publish");
+    const shopStatusPath = await updateShopStatus(slug, "Ready for Gumroad");
     const allFiles = [
       ...writtenPipelineFiles,
       executionPlanPath,
       actionQueuePath,
       ...executorPromptPaths,
       ...builderWorkspacePaths,
-      builderCommandsPath
+      builderCommandsPath,
+      ...publishPackagePaths,
+      buildStatusPath,
+      shopStatusPath
     ];
 
     return NextResponse.json({

@@ -58,7 +58,10 @@ export default async function WorkspaceSummaryPage({ params }: WorkspaceSummaryP
       builderFiles?.some((file) => file.filename === "BUILDER_CONTEXT.md" && file.exists)
   );
   const publishPackageReady = Boolean(publishFiles?.some((file) => file.exists));
-  const publishReady = publishPackageReady || buildStatus === "Ready to Publish" || shopStatus === "Ready for Gumroad";
+  const publishPackageCount = publishFiles?.filter((file) => file.exists).length || 0;
+  const publishReady = publishPackageReady && buildStatus === "Ready to Publish";
+  const shopReady = shopStatus === "Ready for Gumroad" || shopStatus === "Listed" || shopStatus === "Published";
+  const gumroadReady = publishPackageReady && shopStatus === "Ready for Gumroad";
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-10">
@@ -117,6 +120,45 @@ export default async function WorkspaceSummaryPage({ params }: WorkspaceSummaryP
           </p>
           <span className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-black ${readinessBadge(publishReady)}`}>
             {publishReady ? "Prepared" : "Not prepared"}
+          </span>
+        </article>
+      </section>
+
+      <section className="mb-6 grid gap-4 md:grid-cols-3">
+        <article className="rounded-emovel border border-line bg-white p-5">
+          <p className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+            Publish Package Status
+          </p>
+          <span
+            className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-black ${readinessBadge(
+              publishPackageReady
+            )}`}
+          >
+            {publishPackageReady ? `${publishPackageCount} files ready` : "Missing"}
+          </span>
+        </article>
+        <article className="rounded-emovel border border-line bg-white p-5">
+          <p className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+            Shop Readiness
+          </p>
+          <span
+            className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-black ${readinessBadge(
+              shopReady
+            )}`}
+          >
+            {shopStatus || "Not set"}
+          </span>
+        </article>
+        <article className="rounded-emovel border border-line bg-white p-5">
+          <p className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+            Gumroad Readiness
+          </p>
+          <span
+            className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-black ${readinessBadge(
+              gumroadReady
+            )}`}
+          >
+            {gumroadReady ? "Ready for Gumroad" : "Needs review"}
           </span>
         </article>
       </section>
