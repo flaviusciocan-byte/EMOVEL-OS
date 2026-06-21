@@ -26,3 +26,5 @@ venv/
 
 # Logs
 *.log
+scripts/*tool output*.txt
+*.tmp
