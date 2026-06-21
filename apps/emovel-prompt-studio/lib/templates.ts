@@ -26,6 +26,17 @@ export type StudioInput = {
   outputs: OutputType[];
 };
 
+export const pipelineFileMap: Record<OutputType, string> = {
+  offer: "offer.md",
+  copy: "copy.md",
+  "UX audit": "ux-audit.md",
+  "component plan": "component-plan.md",
+  "motion plan": "motion-plan.md",
+  "visual brief": "visual-brief.md",
+  "build plan": "build-plan.md",
+  "launch plan": "launch-plan.md"
+};
+
 const sourceMap: Record<OutputType, string[]> = {
   offer: [
     "knowledge/skills/emovel.offer_architect.md",
@@ -124,3 +135,16 @@ export function generateMarkdown(input: StudioInput) {
   return header + selected.map((type) => sectionFor(type, input)).join("\n\n---\n\n");
 }
 
+export function generatePipelineFiles(input: Omit<StudioInput, "outputs">) {
+  const fullInput: StudioInput = {
+    ...input,
+    outputs: [...outputTypes]
+  };
+
+  return Object.fromEntries(
+    outputTypes.map((type) => [
+      pipelineFileMap[type],
+      `# ${type}\n\n${sectionFor(type, fullInput).replace(/^## [^\n]+\n\n/, "")}\n`
+    ])
+  ) as Record<string, string>;
+}

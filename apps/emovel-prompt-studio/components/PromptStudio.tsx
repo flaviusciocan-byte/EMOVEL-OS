@@ -7,10 +7,13 @@ const defaultPrompt =
   "Create a premium landing page for a productized AI launch system that turns raw ideas into offers, copy, UX direction, build plans, and launch assets.";
 
 export function PromptStudio() {
+  const [projectName, setProjectName] = useState("EMOVEL generated project");
   const [prompt, setPrompt] = useState(defaultPrompt);
   const [projectType, setProjectType] = useState<ProjectType>("landing page");
   const [outputs, setOutputs] = useState<OutputType[]>(["offer", "copy", "UX audit", "component plan"]);
   const [generated, setGenerated] = useState("");
+  const [saveStatus, setSaveStatus] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const markdown = useMemo(
     () => generated || generateMarkdown({ prompt, projectType, outputs }),
@@ -37,6 +40,45 @@ export function PromptStudio() {
     URL.revokeObjectURL(url);
   }
 
+  async function saveProject(action: "save-output" | "run-pipeline") {
+    setIsSaving(true);
+    setSaveStatus("");
+
+    try {
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          action,
+          projectName,
+          prompt,
+          projectType,
+          outputs
+        })
+      });
+
+      const result = (await response.json()) as {
+        ok?: boolean;
+        directory?: string;
+        files?: string[];
+        error?: string;
+      };
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "Unable to save project output.");
+      }
+
+      const fileCount = result.files?.length || 0;
+      setSaveStatus(`Saved ${fileCount} file${fileCount === 1 ? "" : "s"} to ${result.directory}`);
+    } catch (error) {
+      setSaveStatus(error instanceof Error ? error.message : "Unable to save project output.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   const panels = markdown
     .split("\n\n---\n\n")
     .map((panel) => panel.trim())
@@ -56,6 +98,15 @@ export function PromptStudio() {
             Local v1
           </span>
         </div>
+
+        <label className="mb-5 block">
+          <span className="mb-2 block text-sm font-bold">Project name</span>
+          <input
+            className="min-h-12 w-full rounded-emovel border border-line bg-cloud px-4 text-base outline-none transition focus:border-blue focus:bg-white"
+            onChange={(event) => setProjectName(event.target.value)}
+            value={projectName}
+          />
+        </label>
 
         <label className="block">
           <span className="mb-2 block text-sm font-bold">Raw prompt</span>
@@ -121,7 +172,28 @@ export function PromptStudio() {
           >
             Export markdown
           </button>
+          <button
+            className="min-h-12 rounded-emovel border border-line bg-white px-5 py-3 text-sm font-black transition hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isSaving}
+            onClick={() => saveProject("save-output")}
+            type="button"
+          >
+            Save output
+          </button>
+          <button
+            className="min-h-12 rounded-emovel bg-ink px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isSaving}
+            onClick={() => saveProject("run-pipeline")}
+            type="button"
+          >
+            Run Production Pipeline
+          </button>
         </div>
+        {saveStatus ? (
+          <p className="mt-4 rounded-emovel border border-line bg-cloud p-3 font-mono text-xs font-bold text-ink">
+            {saveStatus}
+          </p>
+        ) : null}
       </section>
 
       <section className="rounded-emovel border border-line bg-graphite p-5 text-white shadow-sm">
