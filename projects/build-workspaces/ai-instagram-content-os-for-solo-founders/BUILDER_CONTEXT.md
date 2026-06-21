@@ -1,6 +1,6 @@
 # Builder Context: Ai Instagram Content Os For Solo Founders
 
-Generated locally by EMOVEL Prompt Studio v1.5 on 2026-06-21T16:54:33.983Z.
+Generated locally by EMOVEL Prompt Studio v1.5 on 2026-06-21T17:29:47.120Z.
 
 ## Workspace Path
 
