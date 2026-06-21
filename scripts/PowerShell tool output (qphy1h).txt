@@ -1,0 +1,7 @@
+Exit code 1
+At C:\Users\flavi\Desktop\EMOVEL-OS\scripts\check-system.ps1:43 char:37
++     Write-Host "docs\INSTALLATION.md" -ForegroundColor DarkGray
++                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The string is missing the terminator: ".
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : TerminatorExpectedAtEndOfString
