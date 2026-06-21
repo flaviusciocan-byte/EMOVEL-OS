@@ -6,9 +6,11 @@ import {
   addRunLogEntry,
   buildStatuses,
   createBuilderCommands,
+  createPublishPackage,
   projectNameFromSlug,
   readBuilderWorkspace,
   readBuildStatus,
+  readPublishPackage,
   updateBuildStatus,
   type BuildStatus
 } from "@/lib/projects";
@@ -48,12 +50,14 @@ function statusBadgeClass(status: BuildStatus | null) {
 export default async function BuilderWorkspacePage({ params }: BuilderWorkspacePageProps) {
   const files = await readBuilderWorkspace(params.slug);
   const buildStatus = await readBuildStatus(params.slug);
+  const publishPackage = await readPublishPackage(params.slug);
 
   if (!files) {
     notFound();
   }
 
   const hasBuilderCommands = files.some((file) => file.filename === "BUILDER_COMMANDS.md" && file.exists);
+  const canPreparePublishPackage = buildStatus === "Ready to Publish";
 
   async function createBuilderCommandsAction() {
     "use server";
@@ -79,6 +83,13 @@ export default async function BuilderWorkspacePage({ params }: BuilderWorkspaceP
     const entry = String(formData.get("entry") || "");
 
     await addRunLogEntry(params.slug, entry);
+    revalidatePath(`/builder-workspaces/${params.slug}`);
+  }
+
+  async function createPublishPackageAction() {
+    "use server";
+
+    await createPublishPackage(params.slug);
     revalidatePath(`/builder-workspaces/${params.slug}`);
   }
 
@@ -198,6 +209,72 @@ export default async function BuilderWorkspacePage({ params }: BuilderWorkspaceP
           recommended manual command, expected output folder, and safety notes.
         </p>
       </section>
+
+      <section className="mb-5 rounded-emovel border border-line bg-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-blue">
+              Publish Prep
+            </p>
+            <h2 className="mt-2 text-2xl font-black tracking-[-0.03em]">
+              Prepare publish package
+            </h2>
+          </div>
+          <form action={createPublishPackageAction}>
+            <button
+              className="rounded-emovel bg-mint px-5 py-3 font-black text-ink transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!canPreparePublishPackage}
+              type="submit"
+            >
+              Prepare Publish Package
+            </button>
+          </form>
+        </div>
+        <p className="mt-3 max-w-3xl leading-7 text-slate-600">
+          Generates a local publish-package folder for projects marked Ready to Publish. No Gumroad,
+          social, email, or API integrations are called.
+        </p>
+        {!canPreparePublishPackage ? (
+          <p className="mt-3 rounded-emovel border border-line bg-cloud p-3 font-mono text-xs font-bold text-slate-600">
+            Set Build Status to Ready to Publish before preparing the publish package.
+          </p>
+        ) : null}
+      </section>
+
+      {publishPackage ? (
+        <section className="mb-5 grid gap-4">
+          <div>
+            <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-blue">
+              Publish Package
+            </p>
+            <h2 className="mt-2 text-2xl font-black tracking-[-0.03em]">
+              projects/build-workspaces/{params.slug}/publish-package/
+            </h2>
+          </div>
+          {publishPackage.map((file) => (
+            <article className="overflow-hidden rounded-emovel border border-line bg-white" key={file.filename}>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-cloud px-5 py-4">
+                <div>
+                  <h3 className="text-xl font-black tracking-[-0.02em]">{titleFromFilename(file.filename)}</h3>
+                  <p className="mt-1 font-mono text-xs font-bold text-slate-600">
+                    publish-package/{file.filename}
+                  </p>
+                </div>
+                <CopyMarkdownButton content={file.content} />
+              </div>
+              {file.exists ? (
+                <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap p-5 font-mono text-sm leading-7 text-slate-800">
+                  {file.content}
+                </pre>
+              ) : (
+                <div className="p-5 text-sm font-bold text-slate-500">
+                  This publish package file has not been created yet.
+                </div>
+              )}
+            </article>
+          ))}
+        </section>
+      ) : null}
 
       <section className="grid gap-4">
         {files.map((file) => (

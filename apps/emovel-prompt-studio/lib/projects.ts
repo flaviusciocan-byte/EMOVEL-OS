@@ -41,6 +41,15 @@ export const buildStatuses = [
 
 export type BuildStatus = (typeof buildStatuses)[number];
 
+export const publishPackageFiles = [
+  "PUBLISH_CHECKLIST.md",
+  "GUMROAD_LISTING.md",
+  "SOCIAL_LAUNCH_POSTS.md",
+  "EMAIL_LAUNCH_COPY.md",
+  "PRODUCT_ASSET_LIST.md",
+  "FINAL_QA.md"
+];
+
 export type GeneratedProject = {
   slug: string;
   name: string;
@@ -99,6 +108,10 @@ function statusPath(slug: string) {
 
 function runLogPath(slug: string) {
   return path.join(workspaceDirectory(slug), "RUN_LOG.md");
+}
+
+function publishPackageDirectory(slug: string) {
+  return path.join(workspaceDirectory(slug), "publish-package");
 }
 
 export async function readBuildStatus(slug: string): Promise<BuildStatus | null> {
@@ -291,6 +304,14 @@ async function readSourceProjectFiles(projectDir: string) {
 
 function projectFileMap(files: GeneratedProjectFile[]) {
   return Object.fromEntries(files.map((file) => [file.filename, file]));
+}
+
+async function readProjectFile(projectDir: string, filename: string) {
+  try {
+    return await readFile(path.join(projectDir, filename), "utf8");
+  } catch {
+    return "";
+  }
 }
 
 async function projectDirectory(slug: string) {
@@ -614,6 +635,46 @@ export async function readBuilderWorkspace(slug: string): Promise<GeneratedProje
   );
 }
 
+export async function readPublishPackage(slug: string): Promise<GeneratedProjectFile[] | null> {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    return null;
+  }
+
+  const packageDir = publishPackageDirectory(cleanSlug);
+
+  try {
+    const stats = await stat(packageDir);
+
+    if (!stats.isDirectory()) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
+  return Promise.all(
+    publishPackageFiles.map(async (filename) => {
+      try {
+        const content = await readFile(path.join(packageDir, filename), "utf8");
+
+        return {
+          filename,
+          content,
+          exists: true
+        };
+      } catch {
+        return {
+          filename,
+          content: "",
+          exists: false
+        };
+      }
+    })
+  );
+}
+
 export async function createBuilderWorkspace(slug: string) {
   const { cleanSlug, projectDir } = await projectDirectory(slug);
   const workspaceDir = workspaceDirectory(cleanSlug);
@@ -907,4 +968,220 @@ Manual notes only. Prompt Studio does not execute shell commands from this inter
   await writeFile(filePath, content, "utf8");
 
   return filePath;
+}
+
+export async function createPublishPackage(slug: string) {
+  const { cleanSlug, projectDir } = await projectDirectory(slug);
+  const workspaceDir = workspaceDirectory(cleanSlug);
+  const packageDir = publishPackageDirectory(cleanSlug);
+
+  try {
+    const workspaceStats = await stat(workspaceDir);
+
+    if (!workspaceStats.isDirectory()) {
+      throw new Error("Builder workspace folder does not exist.");
+    }
+  } catch {
+    throw new Error("Builder workspace folder does not exist.");
+  }
+
+  await mkdir(packageDir, { recursive: true });
+
+  const projectName = projectNameFromSlug(cleanSlug);
+  const generatedAt = new Date().toISOString();
+  const offer = await readProjectFile(projectDir, "offer.md");
+  const copy = await readProjectFile(projectDir, "copy.md");
+  const visualBrief = await readProjectFile(projectDir, "visual-brief.md");
+  const launchPlan = await readProjectFile(projectDir, "launch-plan.md");
+  const buildHandoff =
+    (await readProjectFile(projectDir, "build-handoff.md")) ||
+    (await readProjectFile(workspaceDir, "build-handoff.md"));
+
+  const publishChecklist = `# Publish Checklist: ${projectName}
+
+Generated locally by EMOVEL Prompt Studio v1.8 on ${generatedAt}.
+
+## Readiness Gate
+
+- [ ] Build status is Ready to Publish.
+- [ ] Final app build has passed manually.
+- [ ] Landing page copy matches the offer.
+- [ ] Visual direction is consistent with the product positioning.
+- [ ] Pricing and product access details are confirmed.
+- [ ] Refund/support expectations are clear.
+- [ ] Product delivery files are organized.
+- [ ] Gumroad listing is reviewed manually before publishing.
+- [ ] Social and email copy are reviewed manually before posting.
+
+## Source Notes
+
+${conciseSection(offer, `${projectName} needs a final offer review before publishing.`)}
+`;
+
+  const gumroadListing = `# Gumroad Listing: ${projectName}
+
+## Product Name
+
+${projectName}
+
+## Short Description
+
+${conciseSection(copy, "A premium product built from the EMOVEL production pipeline.")}
+
+## Long Description
+
+${sectionFromMarkdown(
+  offer,
+  "Use this product to move from raw idea to a launch-ready asset stack with clear offer, copy, design direction, and publishing materials."
+)}
+
+## What Buyers Get
+
+- Product access or download package
+- Launch assets
+- Usage instructions
+- Support/contact instructions
+
+## Pricing Notes
+
+Confirm pricing manually before publishing. No Gumroad API connection has been made.
+
+## Visual Direction
+
+${conciseSection(visualBrief, "Use premium, concrete product visuals and clear screenshots where available.")}
+`;
+
+  const socialLaunchPosts = `# Social Launch Posts: ${projectName}
+
+## Post 1 - Launch
+
+${projectName} is ready.
+
+${conciseSection(copy, "A focused product for builders who want a clearer path from idea to launch.")}
+
+## Post 2 - Problem
+
+Most launches stall because the offer, page, visuals, and content plan are scattered.
+
+${projectName} packages the launch work into a concrete system.
+
+## Post 3 - Behind The Scenes
+
+Built with the EMOVEL production pipeline:
+
+- offer
+- copy
+- UX plan
+- visual direction
+- build handoff
+- launch prep
+
+## Post 4 - Final CTA
+
+If you want the product, review the Gumroad listing and launch page once they are connected manually.
+`;
+
+  const emailLaunchCopy = `# Email Launch Copy: ${projectName}
+
+## Subject Options
+
+- ${projectName} is ready
+- A cleaner way to launch your next product
+- The launch stack is live
+
+## Email
+
+Hey,
+
+${conciseSection(copy, "I built a focused product to help turn a raw idea into a launch-ready system.")}
+
+Here is what it helps you prepare:
+
+- a clear offer
+- landing page copy
+- UX and visual direction
+- build handoff material
+- launch content
+
+${conciseSection(launchPlan, "The next step is to review the product page and publish manually when ready.")}
+
+Talk soon.
+`;
+
+  const productAssetList = `# Product Asset List: ${projectName}
+
+## Required Publish Assets
+
+- [ ] Final landing page URL
+- [ ] Gumroad product draft
+- [ ] Product cover image
+- [ ] Product screenshots
+- [ ] Pricing details
+- [ ] Download or access instructions
+- [ ] Support/contact information
+- [ ] Refund policy language
+- [ ] Social launch posts
+- [ ] Email launch copy
+
+## Source Files Used
+
+- projects/generated/${cleanSlug}/offer.md
+- projects/generated/${cleanSlug}/copy.md
+- projects/generated/${cleanSlug}/visual-brief.md
+- projects/generated/${cleanSlug}/launch-plan.md
+- projects/generated/${cleanSlug}/build-handoff.md
+
+## Build Handoff Notes
+
+${conciseSection(buildHandoff, "Confirm final build details manually before publishing.")}
+`;
+
+  const finalQa = `# Final QA: ${projectName}
+
+## Product QA
+
+- [ ] Offer is specific and non-generic.
+- [ ] Product promise matches the deliverable.
+- [ ] Pricing is visible and accurate.
+- [ ] Checkout destination is correct.
+- [ ] Delivery instructions are clear.
+
+## Page QA
+
+- [ ] Hero communicates the product clearly.
+- [ ] CTA works.
+- [ ] Mobile layout is readable.
+- [ ] Final build was checked manually.
+- [ ] No placeholder copy remains.
+
+## Launch QA
+
+- [ ] Gumroad listing reviewed manually.
+- [ ] Social posts reviewed manually.
+- [ ] Email copy reviewed manually.
+- [ ] Product assets are complete.
+- [ ] No API, Gumroad, or social posting automation has been triggered by Prompt Studio.
+`;
+
+  const files = {
+    "PUBLISH_CHECKLIST.md": publishChecklist,
+    "GUMROAD_LISTING.md": gumroadListing,
+    "SOCIAL_LAUNCH_POSTS.md": socialLaunchPosts,
+    "EMAIL_LAUNCH_COPY.md": emailLaunchCopy,
+    "PRODUCT_ASSET_LIST.md": productAssetList,
+    "FINAL_QA.md": finalQa
+  };
+
+  const written = await Promise.all(
+    Object.entries(files).map(async ([filename, content]) => {
+      const filePath = path.join(packageDir, filename);
+      await writeFile(filePath, content, "utf8");
+
+      return filePath;
+    })
+  );
+
+  await addRunLogEntry(cleanSlug, "Publish package prepared locally. No Gumroad or social API calls were made.");
+
+  return written;
 }
