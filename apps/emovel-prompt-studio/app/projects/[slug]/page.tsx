@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import { CopyMarkdownButton } from "@/components/CopyMarkdownButton";
-import { readGeneratedProject } from "@/lib/projects";
+import { createBuildHandoff, projectNameFromSlug, readGeneratedProject } from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
 
@@ -19,19 +20,20 @@ function titleFromFilename(filename: string) {
     .join(" ");
 }
 
-function projectNameFromSlug(slug: string) {
-  return slug
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const files = await readGeneratedProject(params.slug);
 
   if (!files) {
     notFound();
+  }
+
+  const hasBuildHandoff = files.some((file) => file.filename === "build-handoff.md" && file.exists);
+
+  async function createBuildHandoffAction() {
+    "use server";
+
+    await createBuildHandoff(params.slug);
+    revalidatePath(`/projects/${params.slug}`);
   }
 
   return (
@@ -48,10 +50,26 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             projects/generated/{params.slug}/
           </p>
         </div>
-        <Link className="rounded-emovel border border-line bg-white px-5 py-3 font-black" href="/projects">
-          Back to Projects
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <form action={createBuildHandoffAction}>
+            <button
+              className="rounded-emovel bg-blue px-5 py-3 font-black text-white transition hover:-translate-y-0.5"
+              type="submit"
+            >
+              Create Build Handoff
+            </button>
+          </form>
+          <Link className="rounded-emovel border border-line bg-white px-5 py-3 font-black" href="/projects">
+            Back to Projects
+          </Link>
+        </div>
       </div>
+
+      {hasBuildHandoff ? (
+        <p className="mb-5 rounded-emovel border border-line bg-white p-4 font-mono text-xs font-bold text-slate-600">
+          build-handoff.md is available below and can be copied into a builder workflow.
+        </p>
+      ) : null}
 
       <section className="grid gap-4">
         {files.map((file) => (
