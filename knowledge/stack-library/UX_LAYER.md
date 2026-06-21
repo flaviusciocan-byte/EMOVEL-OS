@@ -1,19 +1,11 @@
 # UX Layer
 
-Tools registered for UX, interface design, prototyping, and app UI production.
+| Tool | Real Path | Status | Production Use |
+|---|---|---|---|
+| ui-ux-pro-max-skill-main | `C:\EMOVEL\tools\ui-ux-pro-max-skill-main\ui-ux-pro-max-skill-main` | REGISTERED | Premium UI/UX direction, design systems, page styling |
+| quant-ux-master | `C:\EMOVEL\tools\quant-ux-master\quant-ux-master` | FAILED | UX testing/prototyping after Node/Docker fix |
+| penpot-develop | `C:\EMOVEL\tools\penpot-develop\penpot-develop` | REGISTERED | Open-source product/design workspace via Docker |
+| c15t-canary | `C:\EMOVEL\tools\c15t-canary\c15t-canary` | REGISTERED | Consent/privacy UX infrastructure |
+| reflex-main | `C:\EMOVEL\tools\reflex-main\reflex-main` | FAILED | Python UI preview after source install issue is fixed |
 
-| Tool | Path | Priority | Status | Use |
-|---|---|---|---|---|
-| ui-ux-pro-max-skill-main | `C:\EMOVEL\tools\ui-ux-pro-max-skill-main\ui-ux-pro-max-skill-main` | S | READY | Claude Code design intelligence skill/plugin |
-| 21st-sdk-main | `C:\EMOVEL\tools\21st-sdk-main\21st-sdk-main` | S | READY | Agent SDK with React/Next/UI packages |
-| quant-ux-master | `C:\EMOVEL\tools\quant-ux-master\quant-ux-master` | S | NEEDS SETUP | UX prototyping and usability analytics |
-| penpot-develop | `C:\EMOVEL\tools\penpot-develop\penpot-develop` | A | NEEDS SETUP | Open-source Figma alternative |
-| c15t-canary | `C:\EMOVEL\tools\c15t-canary\c15t-canary` | B | NEEDS SETUP | Consent/privacy UI infrastructure |
-| reflex-main | `C:\EMOVEL\tools\reflex-main\reflex-main` | B | NEEDS SETUP | Python-native app UI framework |
-
-## Notes
-
-- Quant UX install failed on Node v24 during `deasync`; use older Node LTS or Docker.
-- Penpot should be treated as Docker/manual setup, not a quick npm install.
-- UI/UX Pro Max is ready as a skill asset; no dependency installation is required.
-
+Use `ui-ux-pro-max-skill-main` first for visual direction, then use 21st components or app-specific UI libraries during build.

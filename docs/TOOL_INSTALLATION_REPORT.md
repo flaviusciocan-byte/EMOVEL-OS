@@ -1,90 +1,70 @@
 # Tool Installation Report
 
 **Date:** 2026-06-21  
-**Scope:** Extract, inventory, register, and prepare downloaded EMOVEL tools  
-**Workspace:** `C:\Users\flavi\Desktop\EMOVEL-OS`
+**Scope:** EMOVEL-OS Production Integration Sprint
 
-## Completed
+## Tier S Results
 
-- Extracted downloaded ZIP archives into `C:\EMOVEL\tools`.
-- Kept full repositories outside EMOVEL-OS.
-- Registered exact extracted paths in `config/tools.json`.
-- Added safe health checks in `config/health-checks.json`.
-- Generated repository inventory in `reports/LOCAL_REPOSITORIES.md`.
-- Updated stack-library layer documents.
-- Installed only Tier S dependency-based tool that could be safely installed.
+| Tool | Command Run | Status | Result |
+|---|---|---|---|
+| ui-ux-pro-max-skill-main | No dependency install required | REGISTERED | Claude Code plugin commands detected in README |
+| 21st-sdk-main | `pnpm.cmd install` previously completed; `npm.cmd install` attempted this sprint | INSTALLED | pnpm install exists; npm failed with lockfile/dependency graph error |
+| quant-ux-master | `npm.cmd install` | FAILED | `deasync` postinstall failed with `spawn EINVAL` on Node v24.16.0 |
+| skills-main | No dependency install required | REGISTERED | Claude Code plugin commands detected in README |
+| n8n-master | `npm.cmd install` | FAILED | npm failed with `EUNSUPPORTEDPROTOCOL workspace:*`; source is pnpm monorepo |
+| gpt-pilot-main | `python -m venv .venv`; `.venv\Scripts\python.exe -m pip install -r requirements.txt` | INSTALLED | Requirements installed into local venv |
+| reflex-main | `python -m venv .venv`; `.venv\Scripts\python.exe -m pip install -e .` | FAILED | Editable install failed on non-PEP-440 dynamic version fallback |
 
-## Tier S Tool Results
+## Exact Failures
 
-### ui-ux-pro-max-skill-main
+### 21st SDK npm install
 
-Path:
+Path: `C:\EMOVEL\tools\21st-sdk-main\21st-sdk-main`
 
-`C:\EMOVEL\tools\ui-ux-pro-max-skill-main\ui-ux-pro-max-skill-main`
+```text
+npm error Cannot destructure property 'package' of 'node.target' as it is null.
+```
 
-Result: **READY**
+The repository declares `pnpm@9.15.4`; pnpm is the valid install path. `node_modules` exists from the completed pnpm install.
 
-Reason: Claude Code skill/plugin with `.claude/` assets. No npm or pip dependency install required.
+### Quant UX
 
-### 21st-sdk-main
+Path: `C:\EMOVEL\tools\quant-ux-master\quant-ux-master`
 
-Path:
+```text
+npm error path ...\node_modules\deasync
+npm error Error: spawn EINVAL
+npm error Node.js v24.16.0
+```
 
-`C:\EMOVEL\tools\21st-sdk-main\21st-sdk-main`
+Recommended fix: use an older Node LTS compatible with Quant UX dependencies, or run the documented Docker setup.
 
-Install command:
+### n8n Source
 
-`pnpm.cmd install`
+Path: `C:\EMOVEL\tools\n8n-master\n8n-master`
 
-Result: **READY**
+```text
+npm error code EUNSUPPORTEDPROTOCOL
+npm error Unsupported URL Type "workspace:": workspace:*
+```
 
-Notes: Install completed. Warnings included deprecated packages, peer dependency mismatches, and Supabase bin warnings. No install failure.
+n8n source is a pnpm workspace. For production runtime, use `npx n8n` or Docker.
 
-### quant-ux-master
+### Reflex
 
-Path:
+Path: `C:\EMOVEL\tools\reflex-main\reflex-main`
 
-`C:\EMOVEL\tools\quant-ux-master\quant-ux-master`
+```text
+ValueError: Error getting the version from source `uv-dynamic-versioning`: Version '0.0.0dev0' does not conform to the PEP 440 style
+```
 
-Install command:
+Recommended fix: inspect Reflex source installation docs or install the published package in a project venv instead of editable source install.
 
-`npm.cmd install`
+## Installed
 
-Result: **NEEDS SETUP**
+- `C:\EMOVEL\tools\21st-sdk-main\21st-sdk-main` via pnpm
+- `C:\EMOVEL\tools\gpt-pilot-main\gpt-pilot-main` via local Python venv
 
-Blocker: `deasync` native postinstall failed with `spawn EINVAL` on Node `v24.16.0`.
+## Not Installed
 
-Recommended next step: use an older Node LTS for this tool or run the Docker setup documented in its README.
-
-## Deferred Tools
-
-The following tools were extracted and registered but not installed because the request limited installation to Tier S:
-
-- c15t-canary
-- nano-banana-2-ai-main
-- ladybird-master
-- darktable-master
-- cryptpad-main
-- screenity-master
-- Cap-main
-- puter-main
-- open-webui-main
-- penpot-develop
-- OpenCut-main
-- higgsfield-main
-- skills-main
-- claude-council-main
-- reflex-main
-- gpt-pilot-main
-- knowledge-work-plugins-main
-- claude-code-main
-- n8n-master
-
-## Safety Notes
-
-- No full repositories were copied into EMOVEL-OS.
-- No Docker Compose services were started.
-- No dev servers were started.
-- No global packages were installed.
-- No destructive cleanup was performed in `C:\EMOVEL\tools`.
-
+All non-Tier-S tools remain registered only.
