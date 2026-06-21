@@ -1,24 +1,71 @@
 # Real Tooling Status
 
-## Status Counts
+Updated: 2026-06-22
+
+## Scope
+
+This status reflects the extraction, detection, registration, and Tier S install pass for these downloaded tools:
+
+- `ui-ux-pro-max-skill-main`
+- `21st-sdk-main`
+- `quant-ux-master`
+- `nano-banana-2-ai-main`
+- `awesome-gpt-image-2-API-and-Prompts-main`
+- `Nano-Banana-Pro-main`
+
+External tool root:
+
+`C:\EMOVEL\tools`
+
+## Status Counts For This Sprint
 
 | Status | Tools |
 |---|---|
-| INSTALLED | 21st-sdk-main, gpt-pilot-main |
-| REGISTERED | ui-ux-pro-max-skill-main, awesome-gpt-image-2-API-and-Prompts-main, c15t-canary, Nano-Banana-Pro-main, nano-banana-2-ai-main, ladybird-master, darktable-master, cryptpad-main, screenity-master, Cap-main, puter-main, open-webui-main, penpot-develop, OpenCut-main, higgsfield-main, skills-main, claude-council-main, knowledge-work-plugins-main, claude-code-main |
-| FAILED | quant-ux-master, n8n-master, reflex-main |
-| PRODUCTION_READY | None yet |
+| INSTALLED | `21st-sdk-main` |
+| INSTALL_READY | `ui-ux-pro-max-skill-main` |
+| REGISTERED | `quant-ux-master`, `nano-banana-2-ai-main`, `awesome-gpt-image-2-API-and-Prompts-main`, `Nano-Banana-Pro-main` |
+| FAILED | None in this sprint |
+| NEEDS_MANUAL_SETUP | None newly assigned in this sprint |
 
-## Real Production Path Available Now
+## Registered Paths
 
-- Claude Council: registered by path
-- UI UX Pro Max: registered by path, plugin command detected
-- 21st SDK: installed with pnpm
-- GPT-Pilot: installed in local venv
-- n8n: source install failed; runtime fallback is npx/Docker
+| Tool | Registered Path |
+|---|---|
+| UI UX Pro Max | `C:\EMOVEL\tools\ui-ux-pro-max-skill-main\ui-ux-pro-max-skill-main` |
+| 21st SDK | `C:\EMOVEL\tools\21st-sdk-main\21st-sdk-main` |
+| Quant UX | `C:\EMOVEL\tools\quant-ux-master\quant-ux-master` |
+| Nano Banana 2 AI | `C:\EMOVEL\tools\nano-banana-2-ai-main\nano-banana-2-ai-main` |
+| Awesome GPT Image 2 API and Prompts | `C:\EMOVEL\tools\awesome-gpt-image-2-API-and-Prompts-main\awesome-gpt-image-2-API-and-Prompts-main` |
+| Nano Banana Pro | `C:\EMOVEL\tools\Nano-Banana-Pro-main\Nano-Banana-Pro-main` |
+
+## Install Results
+
+### 21st SDK
+
+- Detected `package.json`.
+- Detected package manager: `pnpm@9.15.4`.
+- Ran `pnpm.cmd install` inside the extracted tool folder.
+- Result: installed successfully.
+- Note: Prisma client was generated during postinstall.
+
+### UI UX Pro Max
+
+- Detected README.
+- No `package.json`, `pyproject.toml`, `requirements.txt`, or `Dockerfile` detected in the extracted path.
+- No local dependency install was run.
+- Optional global CLI mentioned in README was not installed because global installs were not explicitly required.
+
+## Deferred Tools
+
+- Quant UX was detected and registered but not installed.
+- Nano Banana 2 AI was detected and registered but not installed.
+- Awesome GPT Image 2 API and Prompts is a reference/prompt library and was not installed.
+- Nano Banana Pro is a README/reference repo and was not installed.
 
 ## Not Faked
 
-- No MCP server was claimed as connected without a detected install command.
-- No GSAP skill was claimed as installed; none was detected.
-- No production-ready status was assigned before running the pipeline test.
+- No MCP connection was claimed.
+- No Docker compose command was run.
+- No visual repo dependency install was run.
+- No Quant UX install was run.
+- No global package was installed.
