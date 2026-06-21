@@ -1,0 +1,39 @@
+﻿{
+    "searchPaths":  [
+                        "C:\\Users\\flavi\\Downloads",
+                        "C:\\Users\\flavi\\Desktop",
+                        "C:\\EMOVEL",
+                        "D:\\EMOVEL",
+                        "E:\\EMOVEL"
+                    ],
+    "tools":  {
+                  "claude-council-main":  {
+                                              "registeredPath":  null,
+                                              "description":  "Decision validation layer"
+                                          },
+                  "claude-cowork":  {
+                                        "registeredPath":  null,
+                                        "description":  "Project coordination layer"
+                                    },
+                  "gpt-pilot-main":  {
+                                         "registeredPath":  "C:\\Users\\flavi\\Desktop\\gpt-pilot-main",
+                                         "description":  "Autonomous app builder (Pythagora)"
+                                     },
+                  "claude-code-main":  {
+                                           "registeredPath":  null,
+                                           "description":  "Dev assistance and file editing"
+                                       },
+                  "n8n-master":  {
+                                     "registeredPath":  null,
+                                     "description":  "Workflow automation"
+                                 },
+                  "knowledge-work-plugins-main":  {
+                                                      "registeredPath":  null,
+                                                      "description":  "Reusable skills and MCP connectors"
+                                                  },
+                  "reflex-main":  {
+                                      "registeredPath":  null,
+                                      "description":  "Python-native reactive UI builder"
+                                  }
+              }
+}
