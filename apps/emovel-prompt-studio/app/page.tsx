@@ -26,6 +26,9 @@ export default function HomePage() {
               <Link className="rounded-emovel border border-line px-5 py-3 font-black" href="/output-preview">
                 Output Preview
               </Link>
+              <Link className="rounded-emovel border border-line px-5 py-3 font-black" href="/projects">
+                Projects
+              </Link>
             </div>
           </div>
           <div className="rounded-emovel bg-graphite p-5 text-white">

@@ -21,11 +21,14 @@ export default function RootLayout({
               EMOVEL Prompt Studio
             </Link>
             <div className="flex items-center gap-2 text-sm font-semibold">
+              <Link className="rounded-emovel px-3 py-2 hover:bg-cloud" href="/">
+                Home
+              </Link>
               <Link className="rounded-emovel px-3 py-2 hover:bg-cloud" href="/new-project">
                 New Project
               </Link>
-              <Link className="rounded-emovel px-3 py-2 hover:bg-cloud" href="/output-preview">
-                Output Preview
+              <Link className="rounded-emovel px-3 py-2 hover:bg-cloud" href="/projects">
+                Projects
               </Link>
             </div>
           </nav>
