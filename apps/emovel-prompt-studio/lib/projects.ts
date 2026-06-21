@@ -108,6 +108,13 @@ export type ActionQueueTask = {
   prompt: string;
 };
 
+export type ExecutionInboxTask = ActionQueueTask & {
+  projectSlug: string;
+  projectName: string;
+  executorPromptFile: string;
+  executorPromptContent: string;
+};
+
 function repoRoot() {
   return path.resolve(process.cwd(), "..", "..");
 }
@@ -908,6 +915,56 @@ export async function readExecutorPrompts(slug: string): Promise<GeneratedProjec
   );
 
   return files;
+}
+
+export async function listExecutionInboxTasks(): Promise<ExecutionInboxTask[]> {
+  let entries;
+
+  try {
+    entries = await readdir(generatedRoot(), { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const projectTasks = await Promise.all(
+    entries
+      .filter((entry) => entry.isDirectory())
+      .map(async (entry) => {
+        const cleanSlug = entry.name;
+        const tasks = await readActionQueue(cleanSlug);
+
+        if (!tasks?.length) {
+          return [];
+        }
+
+        const projectDir = path.join(generatedRoot(), cleanSlug);
+        const projectName = projectNameFromSlug(cleanSlug);
+
+        return Promise.all(
+          tasks.map(async (task) => {
+            const executorPromptFile = `projects/generated/${cleanSlug}/executor-prompts/${task.id}.md`;
+            const executorPromptContent = await readProjectFile(
+              executorPromptsDirectory(projectDir),
+              `${task.id}.md`
+            );
+
+            return {
+              ...task,
+              projectSlug: cleanSlug,
+              projectName,
+              executorPromptFile,
+              executorPromptContent
+            };
+          })
+        );
+      })
+  );
+
+  return projectTasks
+    .flat()
+    .sort((a, b) =>
+      `${a.projectName}-${a.group}-${a.taskName}`.localeCompare(`${b.projectName}-${b.group}-${b.taskName}`)
+    );
 }
 
 export async function createBuildHandoff(slug: string) {
