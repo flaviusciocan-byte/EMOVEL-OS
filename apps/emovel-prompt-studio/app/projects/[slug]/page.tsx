@@ -8,7 +8,9 @@ import {
   createBuilderWorkspace,
   createGptPilotBuildHandoff,
   projectNameFromSlug,
-  readGeneratedProject
+  readBuildStatus,
+  readGeneratedProject,
+  type BuildStatus
 } from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
@@ -27,8 +29,25 @@ function titleFromFilename(filename: string) {
     .join(" ");
 }
 
+function statusBadgeClass(status: BuildStatus | null) {
+  if (status === "Build Failed") {
+    return "border-red-200 bg-red-50 text-red-700";
+  }
+
+  if (status === "Build Passed" || status === "Ready to Publish") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (status === "Building") {
+    return "border-blue/20 bg-blue/10 text-blue";
+  }
+
+  return "border-line bg-cloud text-slate-700";
+}
+
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const files = await readGeneratedProject(params.slug);
+  const buildStatus = await readBuildStatus(params.slug);
 
   if (!files) {
     notFound();
@@ -73,6 +92,15 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           <p className="mt-3 font-mono text-xs font-bold text-slate-600">
             projects/generated/{params.slug}/
           </p>
+          {buildStatus ? (
+            <span
+              className={`mt-4 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-black ${statusBadgeClass(
+                buildStatus
+              )}`}
+            >
+              {buildStatus}
+            </span>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-3">
           <form action={createBuildHandoffAction}>

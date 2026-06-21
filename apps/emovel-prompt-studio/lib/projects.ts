@@ -24,15 +24,32 @@ export const builderWorkspaceFiles = [
   "BUILDER_CONTEXT.md",
   "TASKS.md",
   "ACCEPTANCE_CHECKLIST.md",
-  "BUILDER_COMMANDS.md"
+  "BUILDER_COMMANDS.md",
+  "BUILD_STATUS.md",
+  "RUN_LOG.md"
 ];
+
+export const buildStatuses = [
+  "Draft",
+  "Ready for Builder",
+  "Building",
+  "Build Failed",
+  "Build Passed",
+  "Ready for Review",
+  "Ready to Publish"
+] as const;
+
+export type BuildStatus = (typeof buildStatuses)[number];
 
 export type GeneratedProject = {
   slug: string;
   name: string;
   fileCount: number;
   lastModified: string;
+  buildStatus: BuildStatus | null;
 };
+
+export type BuilderWorkspace = GeneratedProject;
 
 export type GeneratedProjectFile = {
   filename: string;
@@ -68,6 +85,54 @@ export function safeSlug(slug: string) {
   return slug.replace(/[^a-z0-9-]/g, "");
 }
 
+function isBuildStatus(value: string): value is BuildStatus {
+  return buildStatuses.includes(value as BuildStatus);
+}
+
+function workspaceDirectory(slug: string) {
+  return path.join(builderWorkspaceRoot(), slug);
+}
+
+function statusPath(slug: string) {
+  return path.join(workspaceDirectory(slug), "BUILD_STATUS.md");
+}
+
+function runLogPath(slug: string) {
+  return path.join(workspaceDirectory(slug), "RUN_LOG.md");
+}
+
+export async function readBuildStatus(slug: string): Promise<BuildStatus | null> {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    return null;
+  }
+
+  try {
+    const content = await readFile(statusPath(cleanSlug), "utf8");
+    const match = content.match(/^- Status: (.+)$/m);
+    const status = match?.[1]?.trim();
+
+    return status && isBuildStatus(status) ? status : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function readRunLog(slug: string) {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    return "";
+  }
+
+  try {
+    return await readFile(runLogPath(cleanSlug), "utf8");
+  } catch {
+    return "";
+  }
+}
+
 export async function listGeneratedProjects(): Promise<GeneratedProject[]> {
   let entries;
 
@@ -85,17 +150,53 @@ export async function listGeneratedProjects(): Promise<GeneratedProject[]> {
         const files = await readdir(projectDir, { withFileTypes: true });
         const markdownFiles = files.filter((file) => file.isFile() && file.name.endsWith(".md"));
         const stats = await stat(projectDir);
+        const buildStatus = await readBuildStatus(entry.name);
 
         return {
           slug: entry.name,
           name: projectNameFromSlug(entry.name),
           fileCount: markdownFiles.length,
-          lastModified: stats.mtime.toISOString()
+          lastModified: stats.mtime.toISOString(),
+          buildStatus
         };
       })
   );
 
   return projects.sort(
+    (a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+  );
+}
+
+export async function listBuilderWorkspaces(): Promise<BuilderWorkspace[]> {
+  let entries;
+
+  try {
+    entries = await readdir(builderWorkspaceRoot(), { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const workspaces = await Promise.all(
+    entries
+      .filter((entry) => entry.isDirectory())
+      .map(async (entry) => {
+        const workspaceDir = workspaceDirectory(entry.name);
+        const files = await readdir(workspaceDir, { withFileTypes: true });
+        const markdownFiles = files.filter((file) => file.isFile() && file.name.endsWith(".md"));
+        const stats = await stat(workspaceDir);
+        const buildStatus = await readBuildStatus(entry.name);
+
+        return {
+          slug: entry.name,
+          name: projectNameFromSlug(entry.name),
+          fileCount: markdownFiles.length,
+          lastModified: stats.mtime.toISOString(),
+          buildStatus
+        };
+      })
+  );
+
+  return workspaces.sort(
     (a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
   );
 }
@@ -465,7 +566,7 @@ export async function builderWorkspaceExists(slug: string) {
   }
 
   try {
-    const stats = await stat(path.join(builderWorkspaceRoot(), cleanSlug));
+    const stats = await stat(workspaceDirectory(cleanSlug));
 
     return stats.isDirectory();
   } catch {
@@ -480,7 +581,7 @@ export async function readBuilderWorkspace(slug: string): Promise<GeneratedProje
     return null;
   }
 
-  const workspaceDir = path.join(builderWorkspaceRoot(), cleanSlug);
+  const workspaceDir = workspaceDirectory(cleanSlug);
 
   try {
     const stats = await stat(workspaceDir);
@@ -515,7 +616,7 @@ export async function readBuilderWorkspace(slug: string): Promise<GeneratedProje
 
 export async function createBuilderWorkspace(slug: string) {
   const { cleanSlug, projectDir } = await projectDirectory(slug);
-  const workspaceDir = path.join(builderWorkspaceRoot(), cleanSlug);
+  const workspaceDir = workspaceDirectory(cleanSlug);
 
   await mkdir(workspaceDir, { recursive: true });
   await createBuildHandoff(cleanSlug);
@@ -620,7 +721,13 @@ Use this workspace as the prep packet for GPT-Pilot, Pythagora, or a manual app 
     )
   ]);
 
-  return [...copiedFiles, ...generatedFiles];
+  const currentStatus = await readBuildStatus(cleanSlug);
+  const statusFiles = await Promise.all([
+    currentStatus ? Promise.resolve(statusPath(cleanSlug)) : updateBuildStatus(cleanSlug, "Draft"),
+    addRunLogEntry(cleanSlug, "Builder workspace prepared. No builder commands have been run.")
+  ]);
+
+  return [...copiedFiles, ...generatedFiles, ...statusFiles];
 }
 
 type RegisteredTool = {
@@ -650,7 +757,7 @@ export async function createBuilderCommands(slug: string) {
     throw new Error("Invalid project slug.");
   }
 
-  const workspaceDir = path.join(builderWorkspaceRoot(), cleanSlug);
+  const workspaceDir = workspaceDirectory(cleanSlug);
   const stats = await stat(workspaceDir);
 
   if (!stats.isDirectory()) {
@@ -737,4 +844,67 @@ Keep generated app code out of EMOVEL-OS control-center folders unless you inten
   await writeFile(commandsPath, content, "utf8");
 
   return commandsPath;
+}
+
+export async function updateBuildStatus(slug: string, status: BuildStatus) {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    throw new Error("Invalid project slug.");
+  }
+
+  if (!isBuildStatus(status)) {
+    throw new Error("Invalid build status.");
+  }
+
+  const workspaceDir = workspaceDirectory(cleanSlug);
+  await mkdir(workspaceDir, { recursive: true });
+
+  const projectName = projectNameFromSlug(cleanSlug);
+  const updatedAt = new Date().toISOString();
+  const content = `# Build Status: ${projectName}
+
+- Status: ${status}
+- Updated: ${updatedAt}
+
+## Notes
+
+This status is updated manually in Prompt Studio. No shell commands, builders, APIs, or database actions are executed by the UI.
+`;
+
+  const filePath = statusPath(cleanSlug);
+  await writeFile(filePath, content, "utf8");
+
+  return filePath;
+}
+
+export async function addRunLogEntry(slug: string, entry: string) {
+  const cleanSlug = safeSlug(slug);
+  const cleanedEntry = entry.trim();
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    throw new Error("Invalid project slug.");
+  }
+
+  if (!cleanedEntry) {
+    throw new Error("Run log entry cannot be empty.");
+  }
+
+  const workspaceDir = workspaceDirectory(cleanSlug);
+  await mkdir(workspaceDir, { recursive: true });
+
+  const existing = await readRunLog(cleanSlug);
+  const projectName = projectNameFromSlug(cleanSlug);
+  const timestamp = new Date().toISOString();
+  const header = `# Run Log: ${projectName}
+
+Manual notes only. Prompt Studio does not execute shell commands from this interface.
+`;
+  const nextEntry = `\n## ${timestamp}\n\n${cleanedEntry}\n`;
+  const content = existing.trim() ? `${existing.trim()}\n${nextEntry}` : `${header}${nextEntry}`;
+  const filePath = runLogPath(cleanSlug);
+
+  await writeFile(filePath, content, "utf8");
+
+  return filePath;
 }

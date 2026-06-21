@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { listGeneratedProjects, type BuildStatus } from "@/lib/projects";
+import { listBuilderWorkspaces, type BuildStatus } from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
 
@@ -26,65 +26,64 @@ function statusBadgeClass(status: BuildStatus | null) {
   return "border-line bg-cloud text-slate-700";
 }
 
-export default async function ProjectsPage() {
-  const projects = await listGeneratedProjects();
+export default async function BuilderWorkspacesPage() {
+  const workspaces = await listBuilderWorkspaces();
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-blue">
-            Generated Projects
+            Builder Workspaces
           </p>
           <h1 className="mt-2 text-4xl font-black tracking-[-0.04em]">
-            Local pipeline outputs ready to reuse.
+            Manual build packets and status.
           </h1>
         </div>
-        <Link className="rounded-emovel bg-blue px-5 py-3 font-black text-white" href="/new-project">
-          New Project
+        <Link className="rounded-emovel border border-line bg-white px-5 py-3 font-black" href="/projects">
+          Back to Projects
         </Link>
       </div>
 
-      {projects.length > 0 ? (
+      {workspaces.length > 0 ? (
         <section className="grid gap-3">
-          {projects.map((project) => (
+          {workspaces.map((workspace) => (
             <article
               className="grid gap-4 rounded-emovel border border-line bg-white p-5 md:grid-cols-[1fr_auto] md:items-center"
-              key={project.slug}
+              key={workspace.slug}
             >
               <div>
-                <h2 className="text-2xl font-black tracking-[-0.03em]">{project.name}</h2>
+                <h2 className="text-2xl font-black tracking-[-0.03em]">{workspace.name}</h2>
                 <div className="mt-3 flex flex-wrap gap-2 font-mono text-xs font-bold text-slate-600">
-                  <span className="rounded-full bg-cloud px-3 py-1">{project.fileCount} markdown files</span>
-                  {project.buildStatus ? (
-                    <span className={`rounded-full border px-3 py-1 ${statusBadgeClass(project.buildStatus)}`}>
-                      {project.buildStatus}
-                    </span>
-                  ) : null}
-                  <span className="rounded-full bg-cloud px-3 py-1">
-                    Modified {formatDate(project.lastModified)}
+                  <span
+                    className={`rounded-full border px-3 py-1 ${statusBadgeClass(workspace.buildStatus)}`}
+                  >
+                    {workspace.buildStatus || "Draft"}
                   </span>
-                  <span className="rounded-full bg-cloud px-3 py-1">{project.slug}</span>
+                  <span className="rounded-full bg-cloud px-3 py-1">{workspace.fileCount} markdown files</span>
+                  <span className="rounded-full bg-cloud px-3 py-1">
+                    Modified {formatDate(workspace.lastModified)}
+                  </span>
+                  <span className="rounded-full bg-cloud px-3 py-1">{workspace.slug}</span>
                 </div>
               </div>
               <Link
                 className="rounded-emovel bg-ink px-5 py-3 text-center font-black text-white transition hover:-translate-y-0.5"
-                href={`/projects/${project.slug}`}
+                href={`/builder-workspaces/${workspace.slug}`}
               >
-                Open project
+                Open workspace
               </Link>
             </article>
           ))}
         </section>
       ) : (
         <section className="rounded-emovel border border-line bg-white p-8">
-          <h2 className="text-2xl font-black">No generated projects yet.</h2>
+          <h2 className="text-2xl font-black">No builder workspaces yet.</h2>
           <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-            Run Production Pipeline from Prompt Studio to create a local project folder under
-            projects/generated/.
+            Open a generated project and click Create Builder Workspace to prepare local builder files.
           </p>
-          <Link className="mt-6 inline-flex rounded-emovel bg-blue px-5 py-3 font-black text-white" href="/new-project">
-            Create first project
+          <Link className="mt-6 inline-flex rounded-emovel bg-blue px-5 py-3 font-black text-white" href="/projects">
+            View projects
           </Link>
         </section>
       )}
