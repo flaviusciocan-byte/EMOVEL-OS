@@ -2,7 +2,12 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import { CopyMarkdownButton } from "@/components/CopyMarkdownButton";
-import { createBuildHandoff, projectNameFromSlug, readGeneratedProject } from "@/lib/projects";
+import {
+  createBuildHandoff,
+  createGptPilotBuildHandoff,
+  projectNameFromSlug,
+  readGeneratedProject
+} from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +33,19 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   const hasBuildHandoff = files.some((file) => file.filename === "build-handoff.md" && file.exists);
+  const hasGptPilotHandoff = files.some((file) => file.filename === "gpt-pilot-prompt.md" && file.exists);
 
   async function createBuildHandoffAction() {
     "use server";
 
     await createBuildHandoff(params.slug);
+    revalidatePath(`/projects/${params.slug}`);
+  }
+
+  async function createGptPilotBuildAction() {
+    "use server";
+
+    await createGptPilotBuildHandoff(params.slug);
     revalidatePath(`/projects/${params.slug}`);
   }
 
@@ -59,6 +72,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               Create Build Handoff
             </button>
           </form>
+          <form action={createGptPilotBuildAction}>
+            <button
+              className="rounded-emovel bg-ink px-5 py-3 font-black text-white transition hover:-translate-y-0.5"
+              type="submit"
+            >
+              Prepare GPT-Pilot Build
+            </button>
+          </form>
           <Link className="rounded-emovel border border-line bg-white px-5 py-3 font-black" href="/projects">
             Back to Projects
           </Link>
@@ -68,6 +89,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       {hasBuildHandoff ? (
         <p className="mb-5 rounded-emovel border border-line bg-white p-4 font-mono text-xs font-bold text-slate-600">
           build-handoff.md is available below and can be copied into a builder workflow.
+        </p>
+      ) : null}
+      {hasGptPilotHandoff ? (
+        <p className="mb-5 rounded-emovel border border-line bg-white p-4 font-mono text-xs font-bold text-slate-600">
+          gpt-pilot-prompt.md and README_BUILD.md are available below. GPT-Pilot has not been run.
         </p>
       ) : null}
 

@@ -10,10 +10,13 @@ export const pipelineFiles = [
   "visual-brief.md",
   "build-plan.md",
   "launch-plan.md",
-  "build-handoff.md"
+  "build-handoff.md",
+  "gpt-pilot-prompt.md",
+  "README_BUILD.md"
 ];
 
-const sourcePipelineFiles = pipelineFiles.filter((filename) => filename !== "build-handoff.md");
+const generatedHandoffFiles = ["build-handoff.md", "gpt-pilot-prompt.md", "README_BUILD.md"];
+const sourcePipelineFiles = pipelineFiles.filter((filename) => !generatedHandoffFiles.includes(filename));
 
 export type GeneratedProject = {
   slug: string;
@@ -133,6 +136,12 @@ function sectionFromMarkdown(content: string, fallback: string) {
   return cleaned.split("\n").slice(0, 8).join("\n").trim();
 }
 
+function conciseSection(content: string, fallback: string) {
+  const cleaned = sectionFromMarkdown(content, fallback);
+
+  return cleaned.split("\n").slice(0, 5).join("\n").trim();
+}
+
 function bulletFileList(slug: string, files: GeneratedProjectFile[]) {
   return files
     .filter((file) => file.exists)
@@ -140,15 +149,8 @@ function bulletFileList(slug: string, files: GeneratedProjectFile[]) {
     .join("\n");
 }
 
-export async function createBuildHandoff(slug: string) {
-  const cleanSlug = safeSlug(slug);
-
-  if (!cleanSlug || cleanSlug !== slug) {
-    throw new Error("Invalid project slug.");
-  }
-
-  const projectDir = path.join(generatedRoot(), cleanSlug);
-  const projectFiles = await Promise.all(
+async function readSourceProjectFiles(projectDir: string) {
+  return Promise.all(
     sourcePipelineFiles.map(async (filename) => {
       try {
         const content = await readFile(path.join(projectDir, filename), "utf8");
@@ -167,8 +169,22 @@ export async function createBuildHandoff(slug: string) {
       }
     })
   );
+}
 
-  const fileByName = Object.fromEntries(projectFiles.map((file) => [file.filename, file]));
+function projectFileMap(files: GeneratedProjectFile[]) {
+  return Object.fromEntries(files.map((file) => [file.filename, file]));
+}
+
+export async function createBuildHandoff(slug: string) {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    throw new Error("Invalid project slug.");
+  }
+
+  const projectDir = path.join(generatedRoot(), cleanSlug);
+  const projectFiles = await readSourceProjectFiles(projectDir);
+  const fileByName = projectFileMap(projectFiles);
   const projectName = projectNameFromSlug(cleanSlug);
   const generatedAt = new Date().toISOString();
 
@@ -248,4 +264,170 @@ ${bulletFileList(cleanSlug, projectFiles)}
   await writeFile(handoffPath, content, "utf8");
 
   return handoffPath;
+}
+
+export async function createGptPilotBuildHandoff(slug: string) {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    throw new Error("Invalid project slug.");
+  }
+
+  const projectDir = path.join(generatedRoot(), cleanSlug);
+  const projectFiles = await readSourceProjectFiles(projectDir);
+  const fileByName = projectFileMap(projectFiles);
+  const projectName = projectNameFromSlug(cleanSlug);
+  const generatedAt = new Date().toISOString();
+
+  const prompt = `# GPT-Pilot / Pythagora Build Prompt: ${projectName}
+
+Generated locally by EMOVEL Prompt Studio v1.4 on ${generatedAt}.
+
+Use this prompt with GPT-Pilot or Pythagora to create a runnable Next.js application. Do not call paid APIs unless a human explicitly adds keys and approves the integration.
+
+## Project Summary
+
+${conciseSection(
+  fileByName["offer.md"]?.content || "",
+  `${projectName} is a premium web product generated from the EMOVEL production pipeline.`
+)}
+
+## Product Goal
+
+Build a polished, responsive, production-ready landing app that turns the generated offer, copy, UX plan, visual brief, and launch plan into a convincing customer-facing experience.
+
+## Target User
+
+${conciseSection(
+  fileByName["copy.md"]?.content || "",
+  "The target user is a product builder, creator, consultant, or founder who needs a premium launch page that clarifies the offer and drives action."
+)}
+
+## Route Structure
+
+- \`/\` - primary landing page.
+- \`/checkout\` - placeholder route for future payment handoff.
+- \`/thank-you\` - placeholder route for post-purchase onboarding.
+- \`/privacy\` - simple policy placeholder if forms are added.
+
+## Component Hierarchy
+
+${conciseSection(
+  fileByName["component-plan.md"]?.content || "",
+  "- AppShell\n- HeroSection\n- ProofStrip\n- OfferBreakdown\n- FeatureGrid\n- PricingSection\n- LaunchPlanSection\n- FAQSection\n- FinalCTA"
+)}
+
+## UX Requirements
+
+${conciseSection(
+  fileByName["ux-audit.md"]?.content || "",
+  "- Make the offer understandable within the first viewport.\n- Keep CTAs visible and specific.\n- Use scannable sections with clear hierarchy.\n- Avoid generic marketing filler."
+)}
+
+## Motion Requirements
+
+${conciseSection(
+  fileByName["motion-plan.md"]?.content || "",
+  "- Add restrained section reveals.\n- Add hover feedback for primary actions.\n- Respect prefers-reduced-motion.\n- Keep motion supportive, not decorative."
+)}
+
+## Styling Rules
+
+${conciseSection(
+  fileByName["visual-brief.md"]?.content || "",
+  "- Use premium editorial typography.\n- Use high contrast and generous spacing.\n- Avoid purple gradient or generic SaaS styling.\n- Design for desktop and mobile from the start."
+)}
+
+## Files To Create
+
+- \`package.json\`
+- \`app/layout.tsx\`
+- \`app/page.tsx\`
+- \`app/checkout/page.tsx\`
+- \`app/thank-you/page.tsx\`
+- \`app/privacy/page.tsx\`
+- \`app/globals.css\`
+- \`components/AppShell.tsx\`
+- \`components/HeroSection.tsx\`
+- \`components/OfferBreakdown.tsx\`
+- \`components/PricingSection.tsx\`
+- \`components/LaunchPlanSection.tsx\`
+- \`components/FAQSection.tsx\`
+- \`components/FinalCTA.tsx\`
+- \`lib/content.ts\`
+
+## Build Constraints
+
+- Use Next.js, TypeScript, and Tailwind CSS.
+- Keep all content local in code or markdown-derived constants.
+- Do not add paid APIs, external databases, auth, or payments.
+- Do not require Docker for the first runnable version.
+- Keep the app buildable with \`npm install\` and \`npm run build\`.
+- Use semantic HTML and accessible controls.
+- Include mobile responsive behavior.
+
+## Source Material
+
+${bulletFileList(cleanSlug, projectFiles)}
+
+## Acceptance Checklist
+
+- [ ] App installs with \`npm install\`.
+- [ ] App builds with \`npm run build\`.
+- [ ] Landing page includes the generated offer and copy.
+- [ ] Route structure exists.
+- [ ] Component hierarchy is implemented.
+- [ ] UX requirements are visible in layout and CTA flow.
+- [ ] Motion requirements are implemented or documented as intentionally deferred.
+- [ ] Styling follows the visual brief.
+- [ ] No paid API, database, or GPT-Pilot runtime dependency is required by the generated app.
+`;
+
+  const readme = `# README_BUILD: ${projectName}
+
+Generated locally by EMOVEL Prompt Studio v1.4 on ${generatedAt}.
+
+## Purpose
+
+This folder contains local production planning files for ${projectName}. Use \`gpt-pilot-prompt.md\` as the builder prompt for GPT-Pilot or Pythagora.
+
+## How To Use With GPT-Pilot / Pythagora
+
+1. Open GPT-Pilot or Pythagora in its own workspace.
+2. Start a new app project.
+3. Paste the full contents of \`projects/generated/${cleanSlug}/gpt-pilot-prompt.md\` as the project brief.
+4. Ask the tool to generate a Next.js, TypeScript, Tailwind app.
+5. Keep generated app files outside EMOVEL-OS unless you are intentionally creating a product app under \`products/{product-slug}/landing-app/\`.
+6. Run \`npm install\`.
+7. Run \`npm run build\`.
+8. Fix build errors before adding integrations.
+
+## Expected App Output
+
+- A runnable Next.js landing app.
+- Local content based on the generated EMOVEL markdown files.
+- Route placeholders for checkout, thank-you, and privacy.
+- Reusable components matching the generated component hierarchy.
+- Styling that follows the visual brief.
+- No paid APIs, no database, and no automation side effects.
+
+## Manual Next Steps
+
+- Review generated copy against \`offer.md\` and \`copy.md\`.
+- Confirm layout quality against \`ux-audit.md\`.
+- Compare components against \`component-plan.md\`.
+- Apply or defer motion from \`motion-plan.md\`.
+- Run local build verification.
+- Create a launch report before publishing.
+`;
+
+  const promptPath = path.join(projectDir, "gpt-pilot-prompt.md");
+  const readmePath = path.join(projectDir, "README_BUILD.md");
+
+  await Promise.all([
+    writeFile(promptPath, prompt, "utf8"),
+    writeFile(readmePath, readme, "utf8")
+  ]);
+
+  return [promptPath, readmePath];
 }
