@@ -50,6 +50,17 @@ export const publishPackageFiles = [
   "FINAL_QA.md"
 ];
 
+export const shopStatuses = ["Draft", "Ready for Gumroad", "Listed", "Published", "Needs Update"] as const;
+
+export type ShopStatus = (typeof shopStatuses)[number];
+
+export const shopPackageFiles = [
+  "GUMROAD_LISTING.md",
+  "PRODUCT_ASSET_LIST.md",
+  "PUBLISH_CHECKLIST.md",
+  "FINAL_QA.md"
+];
+
 export type GeneratedProject = {
   slug: string;
   name: string;
@@ -59,6 +70,19 @@ export type GeneratedProject = {
 };
 
 export type BuilderWorkspace = GeneratedProject;
+
+export type ShopProduct = {
+  slug: string;
+  name: string;
+  buildStatus: BuildStatus | null;
+  shopStatus: ShopStatus | null;
+  gumroadPreview: string;
+  assetChecklist: {
+    done: number;
+    total: number;
+  };
+  lastModified: string;
+};
 
 export type GeneratedProjectFile = {
   filename: string;
@@ -98,6 +122,10 @@ function isBuildStatus(value: string): value is BuildStatus {
   return buildStatuses.includes(value as BuildStatus);
 }
 
+function isShopStatus(value: string): value is ShopStatus {
+  return shopStatuses.includes(value as ShopStatus);
+}
+
 function workspaceDirectory(slug: string) {
   return path.join(builderWorkspaceRoot(), slug);
 }
@@ -112,6 +140,10 @@ function runLogPath(slug: string) {
 
 function publishPackageDirectory(slug: string) {
   return path.join(workspaceDirectory(slug), "publish-package");
+}
+
+function shopStatusPath(slug: string) {
+  return path.join(workspaceDirectory(slug), "SHOP_STATUS.md");
 }
 
 export async function readBuildStatus(slug: string): Promise<BuildStatus | null> {
@@ -143,6 +175,24 @@ export async function readRunLog(slug: string) {
     return await readFile(runLogPath(cleanSlug), "utf8");
   } catch {
     return "";
+  }
+}
+
+export async function readShopStatus(slug: string): Promise<ShopStatus | null> {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    return null;
+  }
+
+  try {
+    const content = await readFile(shopStatusPath(cleanSlug), "utf8");
+    const match = content.match(/^- Status: (.+)$/m);
+    const status = match?.[1]?.trim();
+
+    return status && isShopStatus(status) ? status : null;
+  } catch {
+    return null;
   }
 }
 
@@ -212,6 +262,75 @@ export async function listBuilderWorkspaces(): Promise<BuilderWorkspace[]> {
   return workspaces.sort(
     (a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
   );
+}
+
+function checklistProgress(content: string) {
+  const matches = content.match(/- \[[ xX]\]/g) || [];
+  const done = matches.filter((item) => item.toLowerCase() === "- [x]").length;
+
+  return {
+    done,
+    total: matches.length
+  };
+}
+
+function gumroadPreview(content: string) {
+  const cleaned = content
+    .replace(/^# .+\n+/, "")
+    .replace(/^## Product Name\n+.+\n+/m, "")
+    .replace(/^## /gm, "")
+    .trim();
+
+  return cleaned.split("\n").filter(Boolean).slice(0, 4).join(" ").slice(0, 260);
+}
+
+export async function listShopProducts(): Promise<ShopProduct[]> {
+  let entries;
+
+  try {
+    entries = await readdir(builderWorkspaceRoot(), { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const products = await Promise.all(
+    entries
+      .filter((entry) => entry.isDirectory())
+      .map(async (entry) => {
+        const cleanSlug = entry.name;
+        const packageDir = publishPackageDirectory(cleanSlug);
+
+        try {
+          const packageStats = await stat(packageDir);
+
+          if (!packageStats.isDirectory()) {
+            return null;
+          }
+        } catch {
+          return null;
+        }
+
+        const [gumroad, assets] = await Promise.all([
+          readProjectFile(packageDir, "GUMROAD_LISTING.md"),
+          readProjectFile(packageDir, "PRODUCT_ASSET_LIST.md")
+        ]);
+        const stats = await stat(packageDir);
+
+        return {
+          slug: cleanSlug,
+          name: projectNameFromSlug(cleanSlug),
+          buildStatus: await readBuildStatus(cleanSlug),
+          shopStatus: await readShopStatus(cleanSlug),
+          gumroadPreview: gumroadPreview(gumroad) || "No Gumroad listing preview available yet.",
+          assetChecklist: checklistProgress(assets),
+          lastModified: stats.mtime.toISOString()
+        };
+      })
+  );
+
+  return products
+    .filter((product): product is ShopProduct => Boolean(product))
+    .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
 }
 
 export async function readGeneratedProject(slug: string): Promise<GeneratedProjectFile[] | null> {
@@ -656,6 +775,46 @@ export async function readPublishPackage(slug: string): Promise<GeneratedProject
 
   return Promise.all(
     publishPackageFiles.map(async (filename) => {
+      try {
+        const content = await readFile(path.join(packageDir, filename), "utf8");
+
+        return {
+          filename,
+          content,
+          exists: true
+        };
+      } catch {
+        return {
+          filename,
+          content: "",
+          exists: false
+        };
+      }
+    })
+  );
+}
+
+export async function readShopPackage(slug: string): Promise<GeneratedProjectFile[] | null> {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    return null;
+  }
+
+  const packageDir = publishPackageDirectory(cleanSlug);
+
+  try {
+    const stats = await stat(packageDir);
+
+    if (!stats.isDirectory()) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
+  return Promise.all(
+    shopPackageFiles.map(async (filename) => {
       try {
         const content = await readFile(path.join(packageDir, filename), "utf8");
 
@@ -1184,4 +1343,36 @@ ${conciseSection(buildHandoff, "Confirm final build details manually before publ
   await addRunLogEntry(cleanSlug, "Publish package prepared locally. No Gumroad or social API calls were made.");
 
   return written;
+}
+
+export async function updateShopStatus(slug: string, status: ShopStatus) {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    throw new Error("Invalid project slug.");
+  }
+
+  if (!isShopStatus(status)) {
+    throw new Error("Invalid shop status.");
+  }
+
+  const workspaceDir = workspaceDirectory(cleanSlug);
+  await mkdir(workspaceDir, { recursive: true });
+
+  const projectName = projectNameFromSlug(cleanSlug);
+  const updatedAt = new Date().toISOString();
+  const content = `# Shop Status: ${projectName}
+
+- Status: ${status}
+- Updated: ${updatedAt}
+
+## Notes
+
+This status is managed manually in Prompt Studio. No Gumroad API connection has been made.
+`;
+
+  const filePath = shopStatusPath(cleanSlug);
+  await writeFile(filePath, content, "utf8");
+
+  return filePath;
 }

@@ -33,6 +33,9 @@ export default function RootLayout({
               <Link className="rounded-emovel px-3 py-2 hover:bg-cloud" href="/builder-workspaces">
                 Builder Workspaces
               </Link>
+              <Link className="rounded-emovel px-3 py-2 hover:bg-cloud" href="/shop">
+                Shop
+              </Link>
             </div>
           </nav>
         </header>
