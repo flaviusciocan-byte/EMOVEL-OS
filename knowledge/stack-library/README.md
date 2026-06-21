@@ -1,163 +1,120 @@
-# Stack Library
+# EMOVEL-OS Stack Library
 
-A curated registry of tools used in EMOVEL-OS projects. Before selecting a tool, check here first. If it's not listed, evaluate it and add it.
+Curated registry of tools used across EMOVEL-OS projects. Before selecting a tool, check here first.
 
----
-
-## Automation & Workflow
-
-### n8n
-- **What:** Open-source workflow automation. Self-hostable.
-- **Use when:** You need to connect APIs, trigger actions, or run background jobs without writing full backend code.
-- **Hosted at:** `localhost:5678` (local) or Railway / Render (cloud)
-- **Docs:** https://docs.n8n.io
-
-### Dify
-- **What:** LLM application development platform. Build AI apps with a visual editor.
-- **Use when:** You need to build a custom AI workflow or RAG pipeline without coding the LLM layer from scratch.
-- **Docs:** https://docs.dify.ai
-
-### Langflow
-- **What:** Visual editor for building LangChain-based AI flows.
-- **Use when:** You need a drag-and-drop way to prototype multi-step AI pipelines.
-- **Docs:** https://docs.langflow.org
-
-### Flowise
-- **What:** Low-code LLM app builder built on LangChain.
-- **Use when:** Faster to prototype than Langflow; good for RAG chatbots and agent chains.
-- **Docs:** https://docs.flowiseai.com
+Each tool has a detailed file in [tools/](tools/) with full installation, dependencies, and integration notes.
 
 ---
 
-## AI Agents & Browsers
+## Tier System
 
-### Browser Use
-- **What:** AI agent that can control a browser autonomously.
-- **Use when:** You need to automate web interactions that have no API.
-- **Docs:** https://github.com/browser-use/browser-use
-
-### Firecrawl
-- **What:** Web scraping and crawling API for feeding data to AI.
-- **Use when:** You need to scrape websites at scale or convert pages to clean markdown for LLM input.
-- **Docs:** https://docs.firecrawl.dev
+| Tier | Meaning | Usage |
+|---|---|---|
+| **A** | Core stack — proven, integrated, default choice | Use by default for new projects |
+| **B** | Useful additions — good fit but narrower scope | Add when the specific use case arises |
+| **C** | Experimental — under evaluation, emerging tools | Pilot and assess before committing |
 
 ---
 
-## AI Interfaces
+## EMOVEL Score
 
-### Open WebUI
-- **What:** Self-hosted ChatGPT-like UI for local and cloud LLMs.
-- **Use when:** You want a clean UI for Ollama or OpenAI-compatible models without building one.
-- **Docs:** https://docs.openwebui.com
-
-### LobeChat
-- **What:** Modern, extensible open-source AI chat client with plugin support.
-- **Use when:** You need a polished multi-model chat interface with tool/plugin integration.
-- **Docs:** https://lobehub.com/docs
+Rated 1–10 across: open source, self-hostable, actively maintained, integrates with EMOVEL stack, clear build/ship use case.
 
 ---
 
-## Database & Backend
+## Full Tool Registry
 
-### Supabase
-- **What:** Open-source Firebase alternative. Postgres + Auth + Storage + Realtime + Edge Functions.
-- **Use when:** Default choice for any project that needs a database, auth, and file storage.
-- **Docs:** https://supabase.com/docs
+### Decision
 
----
+| Tool | Tier | Score | Purpose | File |
+|---|---|---|---|---|
+| Plane | A | 8/10 | Open-source project management (Linear alt) | — |
+| Baserow | A | 7/10 | No-code database / Airtable alternative | — |
+| Excalidraw | A | 9/10 | Whiteboard diagramming, hand-drawn aesthetic | — |
+| Mermaid | A | 8/10 | Diagram-as-code for markdown files | — |
+| Puter | B | 7/10 | Internet OS — unified browser desktop | [puter.md](tools/puter.md) |
 
-## Auth
+### Build
 
-### Hanko
-- **What:** Passkey-first authentication. Drop-in web components.
-- **Use when:** You want passwordless auth with minimal setup.
-- **Docs:** https://docs.hanko.io
+| Tool | Tier | Score | Purpose | File |
+|---|---|---|---|---|
+| n8n | A | 10/10 | Workflow automation — API glue and triggers | — |
+| Dify | A | 9/10 | LLM app platform with visual editor | — |
+| Langflow | A | 8/10 | LangChain visual flow builder | — |
+| Flowise | A | 8/10 | Low-code LLM app builder | — |
+| Zed | A | 8/10 | High-performance GPU-accelerated code editor | — |
+| Browser Use | B | 8/10 | AI-controlled browser automation | — |
+| Firecrawl | B | 8/10 | Web scraping API for LLM input | — |
+| Nano Banana | C | 5/10 | Lightweight AI inference for edge/minimal setups | [nano-banana.md](tools/nano-banana.md) |
 
-### Logto
-- **What:** Open-source OIDC auth platform. More full-featured than Hanko.
-- **Use when:** You need full identity management: SSO, RBAC, multi-tenant, OIDC.
-- **Docs:** https://docs.logto.io
+### Design
 
----
+| Tool | Tier | Score | Purpose | File |
+|---|---|---|---|---|
+| Penpot | A | 9/10 | Open-source Figma alternative, SVG-native | [penpot.md](tools/penpot.md) |
+| Excalidraw | A | 9/10 | Quick architecture and flow diagrams | — |
+| Mermaid | A | 8/10 | Diagrams that live in version control | — |
 
-## Analytics
+### Content
 
-### OpenPanel
-- **What:** Open-source, privacy-friendly analytics. Mixpanel-like event tracking.
-- **Use when:** You need user behavior analytics without sending data to third parties.
-- **Docs:** https://openpanel.dev/docs
+| Tool | Tier | Score | Purpose | File |
+|---|---|---|---|---|
+| Cap | A | 8/10 | Screen recording with shareable links (Loom alt) | [cap.md](tools/cap.md) |
+| Screenity | B | 6/10 | Browser extension for annotated screen capture | [screenity.md](tools/screenity.md) |
+| OpenCut | B | 7/10 | Open-source video editor for short-form content | [opencut.md](tools/opencut.md) |
+| Higgsfield | C | 7/10 | AI cinematic video generation | [higgsfield.md](tools/higgsfield.md) |
 
----
+### Distribution
 
-## Content Distribution
+| Tool | Tier | Score | Purpose | File |
+|---|---|---|---|---|
+| Postiz | A | 9/10 | Multi-platform social media scheduling | — |
+| Dub | A | 8/10 | Open-source link management + analytics | — |
+| Novu | A | 8/10 | Notification infrastructure (email, push, SMS) | — |
 
-### Postiz
-- **What:** Open-source social media scheduling across multiple platforms.
-- **Use when:** You need to schedule and publish posts to X, LinkedIn, Threads, Instagram simultaneously.
-- **Docs:** https://postiz.com/docs
+### Knowledge
 
-### Dub
-- **What:** Open-source link management with analytics.
-- **Use when:** You need branded short links and click tracking for campaigns or launches.
-- **Docs:** https://dub.co/docs
+| Tool | Tier | Score | Purpose | File |
+|---|---|---|---|---|
+| Open WebUI | A | 10/10 | Self-hosted AI chat interface for any LLM | [open-webui.md](tools/open-webui.md) |
+| CryptPad | A | 8/10 | E2E encrypted collaborative office suite | [cryptpad.md](tools/cryptpad.md) |
+| LobeChat | B | 7/10 | Multi-model AI chat with plugin support | — |
 
-### Novu
-- **What:** Open-source notification infrastructure. Email, push, SMS, in-app.
-- **Use when:** You need to send transactional or marketing notifications across channels.
-- **Docs:** https://docs.novu.co
+### Infrastructure
 
----
-
-## Project Management
-
-### Baserow
-- **What:** Open-source no-code database / Airtable alternative.
-- **Use when:** You need a visual table interface for non-technical collaborators or lightweight data management.
-- **Docs:** https://baserow.io/docs
-
-### Plane
-- **What:** Open-source project management. Jira/Linear alternative.
-- **Use when:** You want to track issues, sprints, and cycles without paying for Linear or Jira.
-- **Docs:** https://docs.plane.so
-
----
-
-## Diagramming
-
-### Excalidraw
-- **What:** Open-source virtual whiteboard with a hand-drawn aesthetic.
-- **Use when:** You need to sketch architecture diagrams, user flows, or wireframes quickly.
-- **Docs:** https://excalidraw.com
-
-### Mermaid
-- **What:** Diagram-as-code. Renders charts from markdown-style text.
-- **Use when:** You want diagrams that live in markdown files and stay in version control.
-- **Docs:** https://mermaid.js.org/intro/
+| Tool | Tier | Score | Purpose | File |
+|---|---|---|---|---|
+| Supabase | A | 10/10 | Postgres + Auth + Storage + Realtime | — |
+| Hanko | A | 8/10 | Passkey-first drop-in authentication | — |
+| Logto | A | 8/10 | Full OIDC identity platform (SSO, RBAC) | — |
+| OpenPanel | A | 8/10 | Privacy-first open-source analytics | — |
+| Puter | B | 7/10 | Internet OS — cloud desktop + file system | [puter.md](tools/puter.md) |
 
 ---
 
-## Screen Recording
+## Adding a Tool
 
-### Cap
-- **What:** Open-source screen recording and sharing. Loom alternative.
-- **Use when:** You need to record a demo or walkthrough and share a link.
-- **Docs:** https://cap.so
+1. Create a file in `tools/<tool-name>.md` using the standard template
+2. Add a row to the relevant table above
+3. Commit: `knowledge: add <tool-name> to stack-library`
+4. Run the stack status generator if available
 
----
+## Tool File Template
 
-## Code Editors
+```markdown
+# Tool Name
 
-### Zed
-- **What:** High-performance, GPU-accelerated code editor with collaborative editing.
-- **Use when:** You want a fast editor with native AI features and real-time collaboration.
-- **Docs:** https://zed.dev/docs
+| Field | Value |
+|---|---|
+| **Tier** | A / B / C |
+| **Category** | Knowledge / Build / Design / Content / Distribution / Infrastructure / Decision |
+| **Priority** | Critical / High / Medium / Low |
+| **EMOVEL Score** | X / 10 |
 
----
-
-## Adding Tools
-
-To add a new tool to this library:
-
-1. Add it under the relevant category
-2. Fill in: What, Use when, Docs
-3. Commit with message: `knowledge: add <tool-name> to stack-library`
+## Purpose
+## Use Cases
+## Installation Path
+## Dependencies
+## Recommended Integrations
+## Notes
+```
