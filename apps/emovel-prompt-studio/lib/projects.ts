@@ -13,7 +13,8 @@ export const pipelineFiles = [
   "build-handoff.md",
   "gpt-pilot-prompt.md",
   "README_BUILD.md",
-  "execution-plan.md"
+  "execution-plan.md",
+  "ACTION_QUEUE.md"
 ];
 
 const generatedHandoffFiles = ["build-handoff.md", "gpt-pilot-prompt.md", "README_BUILD.md"];
@@ -91,6 +92,22 @@ export type GeneratedProjectFile = {
   exists: boolean;
 };
 
+export const actionQueueStatuses = ["Pending", "In Progress", "Blocked", "Done"] as const;
+
+export type ActionQueueStatus = (typeof actionQueueStatuses)[number];
+
+export type ActionQueueTask = {
+  id: string;
+  group: string;
+  taskName: string;
+  ownerTool: string;
+  status: ActionQueueStatus;
+  inputFile: string;
+  outputFile: string;
+  mode: "manual" | "automated";
+  prompt: string;
+};
+
 function repoRoot() {
   return path.resolve(process.cwd(), "..", "..");
 }
@@ -125,6 +142,10 @@ function isBuildStatus(value: string): value is BuildStatus {
 
 function isShopStatus(value: string): value is ShopStatus {
   return shopStatuses.includes(value as ShopStatus);
+}
+
+function isActionQueueStatus(value: string): value is ActionQueueStatus {
+  return actionQueueStatuses.includes(value as ActionQueueStatus);
 }
 
 function workspaceDirectory(slug: string) {
@@ -452,6 +473,281 @@ async function projectDirectory(slug: string) {
     cleanSlug,
     projectDir
   };
+}
+
+function actionQueuePath(projectDir: string) {
+  return path.join(projectDir, "ACTION_QUEUE.md");
+}
+
+function actionQueueTemplate(cleanSlug: string): ActionQueueTask[] {
+  const projectPath = `projects/generated/${cleanSlug}`;
+
+  return [
+    {
+      id: "strategy-offer-priority",
+      group: "Strategy",
+      taskName: "Confirm offer and execution priority",
+      ownerTool: "EMOVEL command_router + emovel.offer_architect",
+      status: "Pending",
+      inputFile: `${projectPath}/execution-plan.md`,
+      outputFile: `${projectPath}/offer.md`,
+      mode: "manual",
+      prompt:
+        "Review the execution plan and confirm the strongest offer angle, target user, builder target, publishing targets, and the first monetizable outcome."
+    },
+    {
+      id: "content-launch-copy",
+      group: "Content",
+      taskName: "Produce launch-ready copy set",
+      ownerTool: "emovel.copy_framework",
+      status: "Pending",
+      inputFile: `${projectPath}/execution-plan.md`,
+      outputFile: `${projectPath}/copy.md`,
+      mode: "manual",
+      prompt:
+        "Use the execution plan and offer to refine headline, subhead, section copy, CTA language, objections, FAQ, and launch messaging without generic filler."
+    },
+    {
+      id: "ux-conversion-audit",
+      group: "UX",
+      taskName: "Audit page flow and conversion clarity",
+      ownerTool: "EMOVEL premium_ui_director + emovel.page_builder",
+      status: "Pending",
+      inputFile: `${projectPath}/copy.md`,
+      outputFile: `${projectPath}/ux-audit.md`,
+      mode: "manual",
+      prompt:
+        "Evaluate the generated copy and execution plan as a production landing experience. Identify hierarchy, CTA, trust, mobile, and friction fixes before build."
+    },
+    {
+      id: "ux-component-plan",
+      group: "UX",
+      taskName: "Map interface components and motion moments",
+      ownerTool: "21st.dev components + GSAP motion skills fallback",
+      status: "Pending",
+      inputFile: `${projectPath}/ux-audit.md`,
+      outputFile: `${projectPath}/component-plan.md`,
+      mode: "manual",
+      prompt:
+        "Translate the UX audit into concrete sections, components, states, responsive behavior, and restrained motion moments that can be implemented in Next.js."
+    },
+    {
+      id: "build-handoff",
+      group: "Build",
+      taskName: "Create builder handoff packet",
+      ownerTool: "Prompt Studio local builder handoff",
+      status: "Pending",
+      inputFile: `${projectPath}/component-plan.md`,
+      outputFile: `${projectPath}/build-handoff.md`,
+      mode: "automated",
+      prompt:
+        "Create or refresh the build handoff from the generated offer, copy, UX audit, component plan, motion plan, visual brief, build plan, and launch plan."
+    },
+    {
+      id: "build-workspace",
+      group: "Build",
+      taskName: "Prepare builder workspace",
+      ownerTool: "GPT-Pilot / Pythagora / Next.js handoff",
+      status: "Pending",
+      inputFile: `${projectPath}/build-handoff.md`,
+      outputFile: `projects/build-workspaces/${cleanSlug}/BUILDER_CONTEXT.md`,
+      mode: "automated",
+      prompt:
+        "Prepare the external builder workspace with gpt-pilot-prompt.md, README_BUILD.md, BUILDER_CONTEXT.md, TASKS.md, and ACCEPTANCE_CHECKLIST.md. Do not run shell commands from the UI."
+    },
+    {
+      id: "publish-package",
+      group: "Publish",
+      taskName: "Prepare publish package",
+      ownerTool: "Prompt Studio publish prep",
+      status: "Pending",
+      inputFile: `${projectPath}/launch-plan.md`,
+      outputFile: `projects/build-workspaces/${cleanSlug}/publish-package/PUBLISH_CHECKLIST.md`,
+      mode: "automated",
+      prompt:
+        "Generate Gumroad listing copy, social launch posts, email launch copy, asset list, publish checklist, and final QA from the project source files."
+    },
+    {
+      id: "qa-launch-readiness",
+      group: "QA",
+      taskName: "Complete launch readiness review",
+      ownerTool: "Human operator + EMOVEL QA checklist",
+      status: "Pending",
+      inputFile: `projects/build-workspaces/${cleanSlug}/publish-package/FINAL_QA.md`,
+      outputFile: `projects/build-workspaces/${cleanSlug}/SHOP_STATUS.md`,
+      mode: "manual",
+      prompt:
+        "Review the publish package, build status, shop status, Gumroad draft readiness, asset checklist, and final QA before marking the product ready for Gumroad."
+    }
+  ];
+}
+
+function renderActionQueue(cleanSlug: string, executionPlan: string, tasks: ActionQueueTask[]) {
+  const projectName = projectNameFromSlug(cleanSlug);
+  const generatedAt = new Date().toISOString();
+  const planSummary =
+    executionPlan
+      .replace(/^# .+\n+/, "")
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .slice(0, 6)
+      .join("\n") || "Execution plan exists and is ready for task orchestration.";
+
+  const groups = ["Strategy", "Content", "UX", "Build", "Publish", "QA"];
+  const sections = groups
+    .map((group) => {
+      const groupTasks = tasks.filter((task) => task.group === group);
+
+      if (!groupTasks.length) {
+        return "";
+      }
+
+      const renderedTasks = groupTasks
+        .map(
+          (task) => `### ${task.id}
+- Task name: ${task.taskName}
+- Owner/tool: ${task.ownerTool}
+- Status: ${task.status}
+- Input file: ${task.inputFile}
+- Output file: ${task.outputFile}
+- Mode: ${task.mode}
+
+Prompt:
+${task.prompt}
+`
+        )
+        .join("\n");
+
+      return `## ${group}
+
+${renderedTasks}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  return `# Action Queue: ${projectName}
+
+Generated locally by EMOVEL Prompt Studio v1.9 execution layer on ${generatedAt}.
+
+Source execution plan: projects/generated/${cleanSlug}/execution-plan.md
+
+## Execution Plan Snapshot
+
+${planSummary}
+
+${sections}
+`;
+}
+
+function extractMetadata(block: string, label: string) {
+  const match = block.match(new RegExp(`^- ${label}: (.+)$`, "m"));
+
+  return match?.[1]?.trim() || "";
+}
+
+export async function createActionQueue(slug: string) {
+  const { cleanSlug, projectDir } = await projectDirectory(slug);
+  const executionPlanPath = path.join(projectDir, "execution-plan.md");
+  const executionPlan = await readFile(executionPlanPath, "utf8");
+  const content = renderActionQueue(cleanSlug, executionPlan, actionQueueTemplate(cleanSlug));
+  const filePath = actionQueuePath(projectDir);
+
+  await writeFile(filePath, content, "utf8");
+
+  return filePath;
+}
+
+export async function readActionQueue(slug: string): Promise<ActionQueueTask[] | null> {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    return null;
+  }
+
+  const projectDir = path.join(generatedRoot(), cleanSlug);
+  let content = "";
+
+  try {
+    content = await readFile(actionQueuePath(projectDir), "utf8");
+  } catch {
+    return null;
+  }
+
+  const tasks: ActionQueueTask[] = [];
+  const groupSections = content.split(/\n## /).slice(1);
+
+  for (const section of groupSections) {
+    const [groupLine, ...rest] = section.split("\n");
+    const group = groupLine.trim();
+
+    if (!["Strategy", "Content", "UX", "Build", "Publish", "QA"].includes(group)) {
+      continue;
+    }
+
+    const taskBlocks = rest.join("\n").split(/\n### /).filter((block) => block.trim());
+
+    for (const rawBlock of taskBlocks) {
+      const block = rawBlock.startsWith("### ") ? rawBlock.slice(4) : rawBlock;
+      const [idLine, ...bodyLines] = block.split("\n");
+      const body = bodyLines.join("\n");
+      const status = extractMetadata(body, "Status");
+      const mode = extractMetadata(body, "Mode");
+      const prompt = body.split(/\nPrompt:\n/)[1]?.trim() || "";
+
+      if (!isActionQueueStatus(status)) {
+        continue;
+      }
+
+      tasks.push({
+        id: idLine.trim(),
+        group,
+        taskName: extractMetadata(body, "Task name"),
+        ownerTool: extractMetadata(body, "Owner/tool"),
+        status,
+        inputFile: extractMetadata(body, "Input file"),
+        outputFile: extractMetadata(body, "Output file"),
+        mode: mode === "automated" ? "automated" : "manual",
+        prompt
+      });
+    }
+  }
+
+  return tasks;
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export async function updateActionQueueTaskStatus(
+  slug: string,
+  taskId: string,
+  status: ActionQueueStatus
+) {
+  const { projectDir } = await projectDirectory(slug);
+  const cleanedTaskId = taskId.trim();
+
+  if (!cleanedTaskId) {
+    throw new Error("Task id is required.");
+  }
+
+  if (!isActionQueueStatus(status)) {
+    throw new Error("Invalid action queue status.");
+  }
+
+  const filePath = actionQueuePath(projectDir);
+  const content = await readFile(filePath, "utf8");
+  const pattern = new RegExp(`(### ${escapeRegExp(cleanedTaskId)}[\\s\\S]*?- Status: )([^\\n]+)`);
+
+  if (!pattern.test(content)) {
+    throw new Error("Action queue task was not found.");
+  }
+
+  const updated = content.replace(pattern, `$1${status}`);
+  await writeFile(filePath, updated, "utf8");
+
+  return filePath;
 }
 
 export async function createBuildHandoff(slug: string) {
