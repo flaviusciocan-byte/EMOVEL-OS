@@ -17,6 +17,7 @@ desktop.ini
 
 # Node
 node_modules/
+.next/
 
 # Python
 __pycache__/
