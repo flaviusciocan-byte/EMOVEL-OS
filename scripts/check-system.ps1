@@ -1,20 +1,24 @@
-# EMOVEL-OS System Check
-# Auto-searches for all tools, reads registered paths from config/tools.json,
-# and writes docs/SYSTEM_STATUS.md with full git status for each tool.
+# EMOVEL-OS Health Monitor
+# Scans for all registered tools, checks git state and branch, runs health
+# check commands, and writes docs/HEALTH_STATUS.md with a readiness score.
 #
 # Usage:
-#   .\scripts\check-system.ps1            # full check + generate SYSTEM_STATUS.md
-#   .\scripts\check-system.ps1 -NoFile    # console only, skip markdown output
+#   .\scripts\check-system.ps1             # full scan + generate HEALTH_STATUS.md
+#   .\scripts\check-system.ps1 -NoFile     # console output only
+#   .\scripts\check-system.ps1 -Quick      # skip health check commands (path + git only)
 
 param(
-    [switch]$NoFile
+    [switch]$NoFile,
+    [switch]$Quick
 )
 
-$repoRoot   = Split-Path $PSScriptRoot -Parent
-$configFile = Join-Path $repoRoot 'config\tools.json'
-$statusFile = Join-Path $repoRoot 'docs\SYSTEM_STATUS.md'
+$repoRoot         = Split-Path $PSScriptRoot -Parent
+$configFile       = Join-Path $repoRoot 'config\tools.json'
+$healthConfigFile = Join-Path $repoRoot 'config\health-checks.json'
+$healthStatusFile = Join-Path $repoRoot 'docs\HEALTH_STATUS.md'
 
-# --- Defaults used when tools.json is missing ---
+# ── Fallback defaults ─────────────────────────────────────────────────────────
+
 $fallbackSearchPaths = @(
     'C:\Users\flavi\Downloads',
     'C:\Users\flavi\Desktop',
@@ -33,7 +37,8 @@ $fallbackToolNames = @(
     'reflex-main'
 )
 
-# --- Load config ---
+# ── Load configs ──────────────────────────────────────────────────────────────
+
 if (Test-Path $configFile) {
     $config      = Get-Content $configFile -Raw | ConvertFrom-Json
     $searchPaths = $config.searchPaths
@@ -45,7 +50,15 @@ if (Test-Path $configFile) {
     $toolNames   = $fallbackToolNames
 }
 
-# --- Helper: locate a tool folder ---
+if (Test-Path $healthConfigFile) {
+    $healthConfig = Get-Content $healthConfigFile -Raw | ConvertFrom-Json
+} else {
+    Write-Host '[!] config/health-checks.json not found -- health checks disabled.' -ForegroundColor Yellow
+    $healthConfig = $null
+}
+
+# ── Helper: locate a tool folder ─────────────────────────────────────────────
+
 function Find-ToolPath {
     param(
         [string]   $ToolName,
@@ -53,7 +66,6 @@ function Find-ToolPath {
         [string]   $RegisteredPath
     )
 
-    # Use the registered path if it still exists on disk
     if ($RegisteredPath -and (Test-Path $RegisteredPath -PathType Container)) {
         return $RegisteredPath
     }
@@ -61,44 +73,41 @@ function Find-ToolPath {
     foreach ($base in $SearchPaths) {
         if (-not (Test-Path $base -PathType Container)) { continue }
 
-        # Direct child match (fast path)
         $direct = Join-Path $base $ToolName
-        if (Test-Path $direct -PathType Container) {
-            return $direct
-        }
+        if (Test-Path $direct -PathType Container) { return $direct }
 
-        # Recursive search, capped at depth 3 for speed
         $hit = Get-ChildItem -Path $base -Directory -Recurse -Depth 3 -ErrorAction SilentlyContinue |
                Where-Object { $_.Name -eq $ToolName } |
                Select-Object -First 1
-
         if ($hit) { return $hit.FullName }
     }
 
     return $null
 }
 
-# --- Helper: get git metadata for a folder ---
+# ── Helper: git metadata (status, branch, last commit) ───────────────────────
+
 function Get-GitInfo {
     param([string]$Path)
 
-    $result = [PSCustomObject]@{
+    $none = [PSCustomObject]@{
         IsRepo     = $false
         Status     = '--'
+        Branch     = '--'
         LastCommit = '--'
     }
 
     $gitDir = Join-Path $Path '.git'
-    if (-not (Test-Path $gitDir -PathType Container)) { return $result }
+    if (-not (Test-Path $gitDir -PathType Container)) { return $none }
 
-    $result.IsRepo = $true
+    $porcelain  = & git -C $Path status --porcelain 2>$null
+    $status     = if ($porcelain) { 'Modified' } else { 'Clean' }
 
-    # Clean vs modified
-    $porcelain = & git -C $Path status --porcelain 2>$null
-    $result.Status = if ($porcelain) { 'Modified' } else { 'Clean' }
+    $branch     = & git -C $Path rev-parse --abbrev-ref HEAD 2>$null
+    if (-not $branch) { $branch = '--' }
 
-    # Last commit: hash | subject | date
-    $logLine = & git -C $Path log -1 '--format=%h|%s|%ci' 2>$null
+    $logLine    = & git -C $Path log -1 '--format=%h|%s|%ci' 2>$null
+    $lastCommit = '--'
     if ($logLine) {
         $parts = $logLine -split '\|', 3
         if ($parts.Count -ge 3) {
@@ -106,14 +115,79 @@ function Get-GitInfo {
             $subj = $parts[1].Trim()
             $date = $parts[2].Trim()
             if ($date.Length -ge 10) { $date = $date.Substring(0, 10) }
-            $result.LastCommit = "$hash  $subj  ($date)"
+            $lastCommit = "$hash  $subj  ($date)"
         }
     }
 
-    return $result
+    return [PSCustomObject]@{
+        IsRepo     = $true
+        Status     = $status
+        Branch     = $branch
+        LastCommit = $lastCommit
+    }
 }
 
-# --- Main scan ---
+# ── Helper: run a health check command with timeout ───────────────────────────
+# Uses System.Diagnostics.Process directly for reliable WD + timeout control.
+
+function Invoke-HealthCheck {
+    param(
+        [string]$WorkingDir,
+        [string]$Command,
+        [int]   $TimeoutSec = 20
+    )
+
+    if (-not $Command) {
+        return [PSCustomObject]@{ Pass = $null; Label = 'N/A'; Detail = 'No check configured' }
+    }
+
+    $tokens = $Command -split '\s+', 2
+    $exe    = $tokens[0]
+    $argStr = if ($tokens.Count -gt 1) { $tokens[1] } else { '' }
+
+    try {
+        $psi                        = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName               = $exe
+        $psi.Arguments              = $argStr
+        $psi.WorkingDirectory       = $WorkingDir
+        $psi.RedirectStandardOutput = $true
+        $psi.RedirectStandardError  = $true
+        $psi.UseShellExecute        = $false
+        $psi.CreateNoWindow         = $true
+
+        $proc     = [System.Diagnostics.Process]::Start($psi)
+        $outAsync = $proc.StandardOutput.ReadToEndAsync()
+        $errAsync = $proc.StandardError.ReadToEndAsync()
+        $exited   = $proc.WaitForExit($TimeoutSec * 1000)
+
+        if (-not $exited) {
+            try { $proc.Kill() } catch {}
+            return [PSCustomObject]@{ Pass = $false; Label = 'Timeout'; Detail = "No response in ${TimeoutSec}s" }
+        }
+
+        [void]$outAsync.Wait()
+        [void]$errAsync.Wait()
+
+        $stdout = $outAsync.Result.Trim() -replace '[\r\n]+', ' '
+        $stderr = $errAsync.Result.Trim() -replace '[\r\n]+', ' '
+        $output = if ($stdout) { $stdout } elseif ($stderr) { $stderr } else { '(no output)' }
+        if ($output.Length -gt 90) { $output = $output.Substring(0, 90) + '...' }
+
+        $pass  = ($proc.ExitCode -eq 0)
+        $label = if ($pass) { 'Pass' } else { 'Fail' }
+        return [PSCustomObject]@{ Pass = $pass; Label = $label; Detail = $output }
+
+    } catch [System.ComponentModel.Win32Exception] {
+        return [PSCustomObject]@{ Pass = $false; Label = 'Fail'; Detail = "Not found in PATH: $exe" }
+    } catch {
+        $msg = $_.Exception.Message
+        if ($msg.Length -gt 90) { $msg = $msg.Substring(0, 90) }
+        return [PSCustomObject]@{ Pass = $false; Label = 'Fail'; Detail = $msg }
+    }
+}
+
+# ── Main scan ─────────────────────────────────────────────────────────────────
+
 $rows = @()
 
 foreach ($name in $toolNames) {
@@ -129,98 +203,174 @@ foreach ($name in $toolNames) {
     }
 
     $location = Find-ToolPath -ToolName $name -SearchPaths $searchPaths -RegisteredPath $registeredPath
+    $git      = if ($location) { Get-GitInfo -Path $location } else {
+                    [PSCustomObject]@{ IsRepo = $false; Status = '--'; Branch = '--'; LastCommit = '--' }
+                }
 
-    if ($location) {
-        $git   = Get-GitInfo -Path $location
-        $ready = 'Yes'
-    } else {
-        $git   = [PSCustomObject]@{ IsRepo = $false; Status = '--'; LastCommit = '--' }
-        $ready = 'No'
-        $location = 'NOT FOUND'
+    # Health check
+    $healthCmd = $null
+    if ($healthConfig) {
+        $hProp = $healthConfig.PSObject.Properties[$name]
+        if ($hProp) { $healthCmd = $hProp.Value.command }
     }
+
+    if ($location -and -not $Quick) {
+        $health = Invoke-HealthCheck -WorkingDir $location -Command $healthCmd
+    } elseif ($location -and $Quick) {
+        $health = if ($healthCmd) {
+                      [PSCustomObject]@{ Pass = $null; Label = 'Skipped'; Detail = 'Use without -Quick to run' }
+                  } else {
+                      [PSCustomObject]@{ Pass = $null; Label = 'N/A'; Detail = 'No check configured' }
+                  }
+    } else {
+        $health = [PSCustomObject]@{ Pass = $null; Label = '--'; Detail = 'Tool not found' }
+    }
+
+    # Ready = path found AND (no check OR check passed)
+    if (-not $location) {
+        $ready = 'No'
+    } elseif ($health.Pass -eq $false) {
+        $ready = 'No'
+    } else {
+        $ready = 'Yes'
+    }
+
+    $displayLocation = if ($location) { $location } else { 'NOT FOUND' }
 
     $rows += [PSCustomObject]@{
         Tool        = $name
         Description = $description
-        Location    = $location
+        Location    = $displayLocation
         GitStatus   = $git.Status
+        Branch      = $git.Branch
         LastCommit  = $git.LastCommit
+        HealthLabel = $health.Label
+        HealthDetail= $health.Detail
         Ready       = $ready
     }
 }
 
-# --- Console output ---
+# ── Console output ────────────────────────────────────────────────────────────
+
 Write-Host ''
-Write-Host 'EMOVEL-OS -- System Status' -ForegroundColor Cyan
-Write-Host '==========================' -ForegroundColor Cyan
+Write-Host 'EMOVEL-OS -- Health Monitor' -ForegroundColor Cyan
+Write-Host '===========================' -ForegroundColor Cyan
 Write-Host ''
 
 foreach ($r in $rows) {
     if ($r.Ready -eq 'Yes') {
         Write-Host "  [OK]  $($r.Tool)" -ForegroundColor Green
-        Write-Host "        Path : $($r.Location)" -ForegroundColor DarkGray
-        Write-Host "        Git  : $($r.GitStatus)  |  Last: $($r.LastCommit)" -ForegroundColor DarkGray
     } else {
-        Write-Host "  [!!]  $($r.Tool)  --  NOT FOUND" -ForegroundColor Red
-        Write-Host "        Run: .\scripts\register-tool.ps1 '$($r.Tool)'" -ForegroundColor DarkGray
+        $notFoundColor = if ($r.Location -eq 'NOT FOUND') { 'Red' } else { 'Yellow' }
+        Write-Host "  [!!]  $($r.Tool)" -ForegroundColor $notFoundColor
     }
+
+    Write-Host "        Path   : $($r.Location)" -ForegroundColor DarkGray
+    Write-Host "        Git    : $($r.GitStatus)  |  Branch: $($r.Branch)" -ForegroundColor DarkGray
+    Write-Host "        Commit : $($r.LastCommit)" -ForegroundColor DarkGray
+    Write-Host "        Health : $($r.HealthLabel)  --  $($r.HealthDetail)" -ForegroundColor DarkGray
     Write-Host ''
 }
 
-$readyCount = ($rows | Where-Object { $_.Ready -eq 'Yes' }).Count
-$totalCount = $rows.Count
+# ── Readiness score ───────────────────────────────────────────────────────────
 
-Write-Host '==========================' -ForegroundColor Cyan
+$readyCount      = ($rows | Where-Object { $_.Ready -eq 'Yes' }).Count
+$foundCount      = ($rows | Where-Object { $_.Location -ne 'NOT FOUND' }).Count
+$totalCount      = $rows.Count
+$pct             = [Math]::Round(($readyCount / $totalCount) * 100)
 
-$summaryColor = 'Yellow'
-if ($readyCount -eq $totalCount) { $summaryColor = 'Green' }
-Write-Host "$readyCount / $totalCount tools ready." -ForegroundColor $summaryColor
+Write-Host '===========================' -ForegroundColor Cyan
+Write-Host ''
+Write-Host '  EMOVEL-OS Readiness Score' -ForegroundColor White
+Write-Host "  $readyCount / $totalCount tools operational" -ForegroundColor $(if ($readyCount -eq $totalCount) { 'Green' } elseif ($readyCount -eq 0) { 'Red' } else { 'Yellow' })
+Write-Host "  $pct% readiness" -ForegroundColor $(if ($pct -ge 80) { 'Green' } elseif ($pct -ge 40) { 'Yellow' } else { 'Red' })
 Write-Host ''
 
-# --- Generate SYSTEM_STATUS.md ---
+if ($Quick) {
+    Write-Host '  [Quick mode] Health check commands were skipped.' -ForegroundColor DarkGray
+    Write-Host '  Run without -Quick to execute health checks.' -ForegroundColor DarkGray
+    Write-Host ''
+}
+
+# ── Generate HEALTH_STATUS.md ─────────────────────────────────────────────────
+
 if (-not $NoFile) {
     $now = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
 
     $lines = [System.Collections.Generic.List[string]]::new()
-    $lines.Add('# EMOVEL-OS System Status')
+    $lines.Add('# EMOVEL-OS Health Status')
     $lines.Add('')
     $lines.Add("**Generated:** $now")
+    if ($Quick) { $lines.Add('> Health check commands skipped (Quick mode).') }
     $lines.Add('')
+
+    # Score block
+    $lines.Add('## Readiness Score')
+    $lines.Add('')
+    $lines.Add("| Metric | Value |")
+    $lines.Add("|---|---|")
+    $lines.Add("| Tools operational | $readyCount / $totalCount |")
+    $lines.Add("| Tools found on disk | $foundCount / $totalCount |")
+    $lines.Add("| Overall readiness | $pct% |")
+    $lines.Add('')
+
+    # Tool table
     $lines.Add('## Tool Registry')
     $lines.Add('')
-    $lines.Add('| Tool | Location | Git Status | Last Commit | Ready |')
-    $lines.Add('|---|---|---|---|---|')
+    $lines.Add('| Tool | Location | Git Status | Branch | Last Commit | Health Check | Ready |')
+    $lines.Add('|---|---|---|---|---|---|---|')
 
     foreach ($r in $rows) {
-        # Sanitize pipe chars that would break the table
         $loc    = $r.Location    -replace '\|', '-'
         $commit = $r.LastCommit  -replace '\|', '-'
-        $lines.Add("| $($r.Tool) | $loc | $($r.GitStatus) | $commit | $($r.Ready) |")
+        $detail = $r.HealthDetail -replace '\|', '-'
+        $hcell  = "$($r.HealthLabel) -- $detail"
+        $lines.Add("| $($r.Tool) | $loc | $($r.GitStatus) | $($r.Branch) | $commit | $hcell | $($r.Ready) |")
     }
 
     $lines.Add('')
-    $lines.Add('## Summary')
-    $lines.Add('')
-    $lines.Add("$readyCount of $totalCount tools found.")
+    $lines.Add('## Tool Details')
     $lines.Add('')
 
-    if ($readyCount -lt $totalCount) {
-        $lines.Add('### Missing Tools')
+    foreach ($r in $rows) {
+        $statusIcon = if ($r.Ready -eq 'Yes') { 'OK' } else { 'NOT READY' }
+        $lines.Add("### $($r.Tool)  [$statusIcon]")
         $lines.Add('')
-        $lines.Add('Run `register-tool.ps1` for each missing tool:')
+        $lines.Add("- **Description:** $($r.Description)")
+        $lines.Add("- **Location:** $($r.Location)")
+        $lines.Add("- **Git repo:** $($r.GitStatus)")
+        $lines.Add("- **Branch:** $($r.Branch)")
+        $lines.Add("- **Last commit:** $($r.LastCommit)")
+        $lines.Add("- **Health check:** $($r.HealthLabel)")
+        if ($r.HealthDetail -and $r.HealthDetail -ne 'No check configured' -and $r.HealthDetail -ne 'Tool not found') {
+            $lines.Add("- **Output:** ``$($r.HealthDetail)``")
+        }
+        $lines.Add('')
+    }
+
+    # Instructions for missing tools
+    $missingRows = $rows | Where-Object { $_.Location -eq 'NOT FOUND' }
+    if ($missingRows) {
+        $lines.Add('## Missing Tools')
+        $lines.Add('')
+        $lines.Add('Register missing tools by running:')
         $lines.Add('')
         $lines.Add('```powershell')
-        $lines.Add('.\scripts\register-tool.ps1 "tool-name"')
-        $lines.Add('# or specify path explicitly:')
-        $lines.Add('.\scripts\register-tool.ps1 "tool-name" "C:\path\to\tool"')
+        foreach ($m in $missingRows) {
+            $lines.Add(".\scripts\register-tool.ps1 `"$($m.Tool)`"")
+        }
         $lines.Add('```')
         $lines.Add('')
-        $lines.Add('See [docs/INSTALLATION.md](INSTALLATION.md) for expected paths.')
+        $lines.Add('Or with an explicit path if auto-search fails:')
+        $lines.Add('')
+        $lines.Add('```powershell')
+        $lines.Add('.\scripts\register-tool.ps1 "tool-name" "C:\path\to\tool"')
+        $lines.Add('```')
     }
 
     $content = $lines -join [System.Environment]::NewLine
-    [System.IO.File]::WriteAllText($statusFile, $content, [System.Text.Encoding]::UTF8)
+    [System.IO.File]::WriteAllText($healthStatusFile, $content, [System.Text.Encoding]::UTF8)
 
-    Write-Host "SYSTEM_STATUS.md written to: $statusFile" -ForegroundColor DarkGray
+    Write-Host "  HEALTH_STATUS.md written: $healthStatusFile" -ForegroundColor DarkGray
     Write-Host ''
 }

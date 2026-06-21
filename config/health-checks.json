@@ -1,0 +1,30 @@
+{
+  "claude-council-main": {
+    "command": null,
+    "note": "Prompt-based tool — no startup command"
+  },
+  "claude-cowork": {
+    "command": null,
+    "note": "Prompt-based tool — no startup command"
+  },
+  "gpt-pilot-main": {
+    "command": "python main.py --help",
+    "note": "Run from repo root; requires Python in PATH"
+  },
+  "claude-code-main": {
+    "command": "claude --version",
+    "note": "Requires Claude Code CLI installed globally"
+  },
+  "n8n-master": {
+    "command": "n8n --version",
+    "note": "Requires n8n installed globally or via npx"
+  },
+  "knowledge-work-plugins-main": {
+    "command": null,
+    "note": "Static skill library — no startup command"
+  },
+  "reflex-main": {
+    "command": "reflex --version",
+    "note": "Requires Reflex installed in active Python env"
+  }
+}
