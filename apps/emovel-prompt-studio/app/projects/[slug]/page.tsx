@@ -3,7 +3,9 @@ import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import { CopyMarkdownButton } from "@/components/CopyMarkdownButton";
 import {
+  builderWorkspaceExists,
   createBuildHandoff,
+  createBuilderWorkspace,
   createGptPilotBuildHandoff,
   projectNameFromSlug,
   readGeneratedProject
@@ -34,6 +36,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   const hasBuildHandoff = files.some((file) => file.filename === "build-handoff.md" && file.exists);
   const hasGptPilotHandoff = files.some((file) => file.filename === "gpt-pilot-prompt.md" && file.exists);
+  const hasBuilderWorkspace = await builderWorkspaceExists(params.slug);
 
   async function createBuildHandoffAction() {
     "use server";
@@ -47,6 +50,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
     await createGptPilotBuildHandoff(params.slug);
     revalidatePath(`/projects/${params.slug}`);
+  }
+
+  async function createBuilderWorkspaceAction() {
+    "use server";
+
+    await createBuilderWorkspace(params.slug);
+    revalidatePath(`/projects/${params.slug}`);
+    revalidatePath(`/builder-workspaces/${params.slug}`);
   }
 
   return (
@@ -80,6 +91,22 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               Prepare GPT-Pilot Build
             </button>
           </form>
+          <form action={createBuilderWorkspaceAction}>
+            <button
+              className="rounded-emovel bg-mint px-5 py-3 font-black text-ink transition hover:-translate-y-0.5"
+              type="submit"
+            >
+              Create Builder Workspace
+            </button>
+          </form>
+          {hasBuilderWorkspace ? (
+            <Link
+              className="rounded-emovel border border-line bg-white px-5 py-3 font-black"
+              href={`/builder-workspaces/${params.slug}`}
+            >
+              Open Builder Workspace
+            </Link>
+          ) : null}
           <Link className="rounded-emovel border border-line bg-white px-5 py-3 font-black" href="/projects">
             Back to Projects
           </Link>
@@ -94,6 +121,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       {hasGptPilotHandoff ? (
         <p className="mb-5 rounded-emovel border border-line bg-white p-4 font-mono text-xs font-bold text-slate-600">
           gpt-pilot-prompt.md and README_BUILD.md are available below. GPT-Pilot has not been run.
+        </p>
+      ) : null}
+      {hasBuilderWorkspace ? (
+        <p className="mb-5 rounded-emovel border border-line bg-white p-4 font-mono text-xs font-bold text-slate-600">
+          Builder workspace is ready at projects/build-workspaces/{params.slug}/. No builder commands have been run.
         </p>
       ) : null}
 

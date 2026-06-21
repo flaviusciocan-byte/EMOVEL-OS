@@ -1,4 +1,4 @@
-import { readdir, readFile, stat, writeFile } from "fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile } from "fs/promises";
 import path from "path";
 
 export const pipelineFiles = [
@@ -17,6 +17,14 @@ export const pipelineFiles = [
 
 const generatedHandoffFiles = ["build-handoff.md", "gpt-pilot-prompt.md", "README_BUILD.md"];
 const sourcePipelineFiles = pipelineFiles.filter((filename) => !generatedHandoffFiles.includes(filename));
+export const builderWorkspaceFiles = [
+  "gpt-pilot-prompt.md",
+  "build-handoff.md",
+  "README_BUILD.md",
+  "BUILDER_CONTEXT.md",
+  "TASKS.md",
+  "ACCEPTANCE_CHECKLIST.md"
+];
 
 export type GeneratedProject = {
   slug: string;
@@ -37,6 +45,10 @@ function repoRoot() {
 
 export function generatedRoot() {
   return path.join(repoRoot(), "projects", "generated");
+}
+
+export function builderWorkspaceRoot() {
+  return path.join(repoRoot(), "projects", "build-workspaces");
 }
 
 export function projectNameFromSlug(slug: string) {
@@ -175,7 +187,7 @@ function projectFileMap(files: GeneratedProjectFile[]) {
   return Object.fromEntries(files.map((file) => [file.filename, file]));
 }
 
-export async function createBuildHandoff(slug: string) {
+async function projectDirectory(slug: string) {
   const cleanSlug = safeSlug(slug);
 
   if (!cleanSlug || cleanSlug !== slug) {
@@ -183,6 +195,20 @@ export async function createBuildHandoff(slug: string) {
   }
 
   const projectDir = path.join(generatedRoot(), cleanSlug);
+  const stats = await stat(projectDir);
+
+  if (!stats.isDirectory()) {
+    throw new Error("Generated project folder does not exist.");
+  }
+
+  return {
+    cleanSlug,
+    projectDir
+  };
+}
+
+export async function createBuildHandoff(slug: string) {
+  const { cleanSlug, projectDir } = await projectDirectory(slug);
   const projectFiles = await readSourceProjectFiles(projectDir);
   const fileByName = projectFileMap(projectFiles);
   const projectName = projectNameFromSlug(cleanSlug);
@@ -267,13 +293,7 @@ ${bulletFileList(cleanSlug, projectFiles)}
 }
 
 export async function createGptPilotBuildHandoff(slug: string) {
-  const cleanSlug = safeSlug(slug);
-
-  if (!cleanSlug || cleanSlug !== slug) {
-    throw new Error("Invalid project slug.");
-  }
-
-  const projectDir = path.join(generatedRoot(), cleanSlug);
+  const { cleanSlug, projectDir } = await projectDirectory(slug);
   const projectFiles = await readSourceProjectFiles(projectDir);
   const fileByName = projectFileMap(projectFiles);
   const projectName = projectNameFromSlug(cleanSlug);
@@ -430,4 +450,170 @@ This folder contains local production planning files for ${projectName}. Use \`g
   ]);
 
   return [promptPath, readmePath];
+}
+
+export async function builderWorkspaceExists(slug: string) {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    return false;
+  }
+
+  try {
+    const stats = await stat(path.join(builderWorkspaceRoot(), cleanSlug));
+
+    return stats.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+export async function readBuilderWorkspace(slug: string): Promise<GeneratedProjectFile[] | null> {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    return null;
+  }
+
+  const workspaceDir = path.join(builderWorkspaceRoot(), cleanSlug);
+
+  try {
+    const stats = await stat(workspaceDir);
+
+    if (!stats.isDirectory()) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
+  return Promise.all(
+    builderWorkspaceFiles.map(async (filename) => {
+      try {
+        const content = await readFile(path.join(workspaceDir, filename), "utf8");
+
+        return {
+          filename,
+          content,
+          exists: true
+        };
+      } catch {
+        return {
+          filename,
+          content: "",
+          exists: false
+        };
+      }
+    })
+  );
+}
+
+export async function createBuilderWorkspace(slug: string) {
+  const { cleanSlug, projectDir } = await projectDirectory(slug);
+  const workspaceDir = path.join(builderWorkspaceRoot(), cleanSlug);
+
+  await mkdir(workspaceDir, { recursive: true });
+  await createBuildHandoff(cleanSlug);
+  await createGptPilotBuildHandoff(cleanSlug);
+
+  const copiedFiles = await Promise.all(
+    generatedHandoffFiles.map(async (filename) => {
+      const content = await readFile(path.join(projectDir, filename), "utf8");
+      const destination = path.join(workspaceDir, filename);
+      await writeFile(destination, content, "utf8");
+
+      return destination;
+    })
+  );
+
+  const projectFiles = await readSourceProjectFiles(projectDir);
+  const fileByName = projectFileMap(projectFiles);
+  const projectName = projectNameFromSlug(cleanSlug);
+  const generatedAt = new Date().toISOString();
+
+  const builderContext = `# Builder Context: ${projectName}
+
+Generated locally by EMOVEL Prompt Studio v1.5 on ${generatedAt}.
+
+## Workspace Path
+
+\`projects/build-workspaces/${cleanSlug}/\`
+
+## Source Project
+
+\`projects/generated/${cleanSlug}/\`
+
+## Project Summary
+
+${conciseSection(
+  fileByName["offer.md"]?.content || "",
+  `${projectName} is ready for a builder pass using the generated EMOVEL launch assets.`
+)}
+
+## Builder Objective
+
+Use this workspace as the prep packet for GPT-Pilot, Pythagora, or a manual app build. The workspace contains the builder prompt, product handoff, build README, tasks, and acceptance checklist.
+
+## Local-Only Boundaries
+
+- Do not run GPT-Pilot from Prompt Studio.
+- Do not execute shell commands from the UI.
+- Do not add paid APIs or databases.
+- Use this folder as preparation material only.
+`;
+
+  const tasks = `# Builder Tasks: ${projectName}
+
+## Prep
+
+- [ ] Read \`README_BUILD.md\`.
+- [ ] Read \`gpt-pilot-prompt.md\`.
+- [ ] Read \`build-handoff.md\`.
+- [ ] Confirm the app output location before generation.
+
+## App Build
+
+- [ ] Create a Next.js app with TypeScript and Tailwind.
+- [ ] Implement the route structure from \`gpt-pilot-prompt.md\`.
+- [ ] Build the component hierarchy from the handoff.
+- [ ] Move product copy into local content constants.
+- [ ] Apply the visual direction and responsive layout rules.
+- [ ] Add motion only after the static page is stable.
+
+## Verification
+
+- [ ] Run \`npm install\` in the generated app workspace.
+- [ ] Run \`npm run build\`.
+- [ ] Fix all build errors.
+- [ ] Smoke test the landing page locally.
+- [ ] Record launch notes before publishing.
+`;
+
+  const acceptanceChecklist = `# Acceptance Checklist: ${projectName}
+
+- [ ] Builder workspace contains \`gpt-pilot-prompt.md\`.
+- [ ] Builder workspace contains \`build-handoff.md\`.
+- [ ] Builder workspace contains \`README_BUILD.md\`.
+- [ ] App can be generated without paid APIs.
+- [ ] App can be generated without a database.
+- [ ] App has a primary landing page route.
+- [ ] App includes generated offer, copy, UX, component, motion, and visual direction.
+- [ ] App is responsive on mobile and desktop.
+- [ ] App passes \`npm run build\`.
+- [ ] GPT-Pilot or Pythagora output is reviewed manually before launch.
+`;
+
+  const generatedFiles = await Promise.all([
+    writeFile(path.join(workspaceDir, "BUILDER_CONTEXT.md"), builderContext, "utf8").then(
+      () => path.join(workspaceDir, "BUILDER_CONTEXT.md")
+    ),
+    writeFile(path.join(workspaceDir, "TASKS.md"), tasks, "utf8").then(() =>
+      path.join(workspaceDir, "TASKS.md")
+    ),
+    writeFile(path.join(workspaceDir, "ACCEPTANCE_CHECKLIST.md"), acceptanceChecklist, "utf8").then(
+      () => path.join(workspaceDir, "ACCEPTANCE_CHECKLIST.md")
+    )
+  ]);
+
+  return [...copiedFiles, ...generatedFiles];
 }
