@@ -1,6 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  builderTargets,
+  generateExecutionPlan,
+  publishingTargets,
+  routeCommand,
+  type BuilderTarget,
+  type PublishingTarget
+} from "@/execution";
 import { generateMarkdown, outputTypes, projectTypes, type OutputType, type ProjectType } from "@/lib/templates";
 
 const defaultPrompt =
@@ -14,6 +22,26 @@ export function PromptStudio() {
   const [generated, setGenerated] = useState("");
   const [saveStatus, setSaveStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [executionMode, setExecutionMode] = useState(false);
+  const [builderTarget, setBuilderTarget] = useState<BuilderTarget>("GPT-Pilot");
+  const [selectedPublishingTargets, setSelectedPublishingTargets] = useState<PublishingTarget[]>([
+    "Gumroad",
+    "Instagram",
+    "Email"
+  ]);
+
+  const routedCommand = useMemo(() => routeCommand(prompt), [prompt]);
+  const executionPlan = useMemo(
+    () =>
+      generateExecutionPlan({
+        command: prompt,
+        projectName,
+        projectSlug: slugify(projectName || prompt),
+        builderTarget,
+        publishingTargets: selectedPublishingTargets
+      }),
+    [builderTarget, projectName, prompt, selectedPublishingTargets]
+  );
 
   const markdown = useMemo(
     () => generated || generateMarkdown({ prompt, projectType, outputs }),
@@ -23,6 +51,22 @@ export function PromptStudio() {
   function toggleOutput(output: OutputType) {
     setOutputs((current) =>
       current.includes(output) ? current.filter((item) => item !== output) : [...current, output]
+    );
+  }
+
+  function slugify(value: string) {
+    const slug = value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    return slug || "untitled-project";
+  }
+
+  function togglePublishingTarget(target: PublishingTarget) {
+    setSelectedPublishingTargets((current) =>
+      current.includes(target) ? current.filter((item) => item !== target) : [...current, target]
     );
   }
 
@@ -40,7 +84,7 @@ export function PromptStudio() {
     URL.revokeObjectURL(url);
   }
 
-  async function saveProject(action: "save-output" | "run-pipeline") {
+  async function saveProject(action: "save-output" | "run-pipeline" | "generate-execution-plan") {
     setIsSaving(true);
     setSaveStatus("");
 
@@ -55,7 +99,9 @@ export function PromptStudio() {
           projectName,
           prompt,
           projectType,
-          outputs
+          outputs,
+          builderTarget,
+          publishingTargets: selectedPublishingTargets
         })
       });
 
@@ -97,6 +143,23 @@ export function PromptStudio() {
           <span className="rounded-emovel bg-cloud px-3 py-2 font-mono text-xs font-bold uppercase tracking-[0.14em]">
             Local v1
           </span>
+        </div>
+
+        <div className="mb-5 rounded-emovel border border-line bg-cloud p-4">
+          <label className="flex cursor-pointer items-center justify-between gap-4">
+            <span>
+              <span className="block text-sm font-black">Execution Mode</span>
+              <span className="mt-1 block text-xs font-semibold text-slate-600">
+                Route the prompt into skills, builder target, publishing targets, and a local execution plan.
+              </span>
+            </span>
+            <input
+              checked={executionMode}
+              className="h-5 w-5 accent-blue"
+              onChange={() => setExecutionMode((current) => !current)}
+              type="checkbox"
+            />
+          </label>
         </div>
 
         <label className="mb-5 block">
@@ -157,6 +220,73 @@ export function PromptStudio() {
           </div>
         </div>
 
+        {executionMode ? (
+          <div className="mt-6 rounded-emovel border border-line bg-white p-4">
+            <div className="grid gap-4">
+              <div>
+                <p className="font-mono text-xs font-black uppercase tracking-[0.16em] text-blue">
+                  Intent Preview
+                </p>
+                <p className="mt-2 text-lg font-black capitalize">{routedCommand.intent.replace("-", " ")}</p>
+                <p className="mt-1 font-mono text-xs font-bold text-slate-600">
+                  Confidence: {routedCommand.confidence}
+                </p>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-bold">Selected builder target</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {builderTargets.map((target) => (
+                    <button
+                      className={`min-h-11 rounded-emovel border px-4 py-3 text-left text-sm font-bold transition ${
+                        builderTarget === target ? "border-blue bg-blue text-white" : "border-line bg-cloud hover:bg-white"
+                      }`}
+                      key={target}
+                      onClick={() => setBuilderTarget(target)}
+                      type="button"
+                    >
+                      {target}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-bold">Selected publishing targets</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {publishingTargets.map((target) => (
+                    <label
+                      className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-emovel border px-4 py-3 text-sm font-bold ${
+                        selectedPublishingTargets.includes(target) ? "border-mint bg-mint/15" : "border-line bg-cloud"
+                      }`}
+                      key={target}
+                    >
+                      <input
+                        checked={selectedPublishingTargets.includes(target)}
+                        className="h-4 w-4 accent-blue"
+                        onChange={() => togglePublishingTarget(target)}
+                        type="checkbox"
+                      />
+                      {target}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-bold">Selected skills preview</p>
+                <div className="flex flex-wrap gap-2">
+                  {routedCommand.selectedSkills.map((skill) => (
+                    <span className="rounded-full bg-cloud px-3 py-1 font-mono text-xs font-bold" key={skill}>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             className="min-h-12 rounded-emovel bg-blue px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#245AE0]"
@@ -188,6 +318,16 @@ export function PromptStudio() {
           >
             Run Production Pipeline
           </button>
+          {executionMode ? (
+            <button
+              className="min-h-12 rounded-emovel bg-mint px-5 py-3 text-sm font-black text-ink transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isSaving}
+              onClick={() => saveProject("generate-execution-plan")}
+              type="button"
+            >
+              Generate Execution Plan
+            </button>
+          ) : null}
         </div>
         {saveStatus ? (
           <p className="mt-4 rounded-emovel border border-line bg-cloud p-3 font-mono text-xs font-bold text-ink">
@@ -206,6 +346,17 @@ export function PromptStudio() {
             {outputs.length || 3} panels
           </span>
         </div>
+
+        {executionMode ? (
+          <article className="mb-4 rounded-emovel border border-mint/40 bg-mint/10 p-4">
+            <p className="mb-3 font-mono text-xs font-black uppercase tracking-[0.16em] text-mint">
+              Execution Plan Preview
+            </p>
+            <pre className="max-h-[360px] overflow-auto whitespace-pre-wrap font-mono text-xs leading-5 text-white/80">
+              {executionPlan}
+            </pre>
+          </article>
+        ) : null}
 
         <div className="grid gap-3">
           {panels.map((panel, index) => {

@@ -12,7 +12,8 @@ export const pipelineFiles = [
   "launch-plan.md",
   "build-handoff.md",
   "gpt-pilot-prompt.md",
-  "README_BUILD.md"
+  "README_BUILD.md",
+  "execution-plan.md"
 ];
 
 const generatedHandoffFiles = ["build-handoff.md", "gpt-pilot-prompt.md", "README_BUILD.md"];

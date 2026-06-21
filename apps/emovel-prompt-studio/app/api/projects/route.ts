@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
+import { generateExecutionPlan, type BuilderTarget, type PublishingTarget } from "@/execution";
 import {
   generateMarkdown,
   generatePipelineFiles,
@@ -11,11 +12,13 @@ import {
 } from "@/lib/templates";
 
 type SaveRequest = {
-  action: "save-output" | "run-pipeline";
+  action: "save-output" | "run-pipeline" | "generate-execution-plan";
   projectName?: string;
   prompt?: string;
   projectType?: ProjectType;
   outputs?: OutputType[];
+  builderTarget?: BuilderTarget;
+  publishingTargets?: PublishingTarget[];
 };
 
 function slugify(value: string) {
@@ -60,6 +63,26 @@ export async function POST(request: Request) {
 
   await mkdir(projectDir, { recursive: true });
 
+  if (body.action === "generate-execution-plan") {
+    const markdown = generateExecutionPlan({
+      command: prompt,
+      projectName,
+      projectSlug: slug,
+      builderTarget: body.builderTarget,
+      publishingTargets: body.publishingTargets
+    });
+    const filePath = path.join(projectDir, "execution-plan.md");
+    await writeFile(filePath, markdown, "utf8");
+
+    return NextResponse.json({
+      ok: true,
+      action: body.action,
+      slug,
+      directory: path.relative(repoRoot(), projectDir),
+      files: [path.relative(repoRoot(), filePath)]
+    });
+  }
+
   if (body.action === "run-pipeline") {
     const files = generatePipelineFiles({ prompt, projectType });
     const written = await Promise.all(
@@ -96,4 +119,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: false, error: "Unknown project action." }, { status: 400 });
 }
-
