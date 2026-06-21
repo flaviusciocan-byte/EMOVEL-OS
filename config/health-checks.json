@@ -1,30 +1,161 @@
 {
-  "claude-council-main": {
-    "command": null,
-    "note": "Prompt-based tool — no startup command"
+  "_meta": {
+    "lastUpdated": "2026-06-21",
+    "note": "Commands verified against real ZIP contents. Statuses reflect current state — none of the new ZIPs are extracted yet."
   },
-  "claude-cowork": {
-    "command": null,
-    "note": "Prompt-based tool — no startup command"
+  "ui-ux-pro-max-skill-main": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "claude-code-plugin",
+    "checkCommand": null,
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\ui-ux-pro-max-skill-main.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\ui-ux-pro-max-skill-main'",
+    "activateCommand": "Copy C:\\EMOVEL\\04_AI_STACK\\ui-ux-pro-max-skill-main\\.claude to your project root",
+    "healthCheck": "Verify .claude/skills/ folder appears in project root after copy",
+    "note": "No npm or pip required. Pure Claude Code plugin — activate by merging .claude/ into project."
   },
-  "gpt-pilot-main": {
-    "command": "python main.py --help",
-    "note": "Run from repo root; requires Python in PATH"
+  "21st-sdk-main": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "node-monorepo",
+    "checkCommand": "node --version && npm --version",
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\21st-sdk-main.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\21st-sdk-main'; cd C:\\EMOVEL\\04_AI_STACK\\21st-sdk-main; npm install",
+    "runCommand": "cd C:\\EMOVEL\\04_AI_STACK\\21st-sdk-main && npm run dev",
+    "healthCheck": "npm run ts:check",
+    "note": "160 MB monorepo. For single components without full extract: npx shadcn@latest add https://21st.dev/r/<component>"
   },
-  "claude-code-main": {
-    "command": "claude --version",
-    "note": "Requires Claude Code CLI installed globally"
+  "quant-ux-master": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "vue-app",
+    "checkCommand": "node --version && docker --version",
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\quant-ux-master.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\quant-ux-master'; cd C:\\EMOVEL\\04_AI_STACK\\quant-ux-master; npm install",
+    "runCommand": "cd C:\\EMOVEL\\04_AI_STACK\\quant-ux-master && npm run serve",
+    "runCommandDocker": "cd C:\\EMOVEL\\04_AI_STACK\\quant-ux-master && docker-compose up",
+    "healthCheck": "npm run test:unit",
+    "note": "Vue.js v4.1.23. npm run serve runs on localhost:8080. Docker is simpler if Docker is available."
+  },
+  "nano-banana-2-ai-main": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "nextjs-app",
+    "checkCommand": "node --version",
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\nano-banana-2-ai-main.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\nano-banana-2-ai-main'; cd C:\\EMOVEL\\04_AI_STACK\\nano-banana-2-ai-main; npm install",
+    "runCommand": "cd C:\\EMOVEL\\04_AI_STACK\\nano-banana-2-ai-main && npm run dev",
+    "healthCheck": "npm run build",
+    "envRequired": ["GEMINI_API_KEY"],
+    "note": "Next.js 0.1.0. Requires GEMINI_API_KEY set in .env.local before running."
+  },
+  "nano-banana-pro-main": {
+    "status": "README_ONLY",
+    "type": "documentation",
+    "checkCommand": null,
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\Nano-Banana-Pro-main.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\nano-banana-pro-ref'",
+    "runCommand": null,
+    "healthCheck": null,
+    "note": "Reference documentation only — no runnable code. Extract for README reference."
+  },
+  "awesome-gpt-image-2-api-and-prompts-main": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "prompt-library",
+    "checkCommand": null,
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\awesome-gpt-image-2-API-and-Prompts-main.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\awesome-gpt-image-2-prompts'",
+    "runCommand": null,
+    "healthCheck": "Verify cases/ folder exists after extraction",
+    "note": "244.9 MB — large due to case images. CC0 license. No install needed after extraction."
+  },
+  "open-webui-main": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "python-svelte-app",
+    "checkCommand": "docker --version",
+    "installCommandDocker": "docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main",
+    "installCommandManual": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\open-webui-main.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\open-webui-main'; cd C:\\EMOVEL\\04_AI_STACK\\open-webui-main; npm install; pip install -r backend/requirements.txt",
+    "runCommand": "npm run dev  +  python -m open_webui serve",
+    "healthCheck": "curl http://localhost:3000",
+    "note": "open-webui v0.9.6. Docker is strongly recommended — avoids Python + Node dual-runtime setup."
+  },
+  "penpot-develop": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "clojure-app",
+    "checkCommand": "docker --version && docker-compose --version",
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\penpot-develop.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\penpot-develop'",
+    "runCommand": "cd C:\\EMOVEL\\04_AI_STACK\\penpot-develop && docker-compose -f docker/images/docker-compose.yaml up",
+    "healthCheck": "curl http://localhost:3449",
+    "note": "NEEDS_MANUAL_SETUP — Clojure. Docker via docker/images/docker-compose.yaml is the practical path. Clojure dev environment required for source modifications."
+  },
+  "cap-main": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "node-monorepo",
+    "checkCommand": "node --version && npm --version",
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\Cap-main.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\Cap-main'; cd C:\\EMOVEL\\04_AI_STACK\\Cap-main; npm install",
+    "runCommand": "npm run build:web",
+    "healthCheck": "npm run build",
+    "note": "NEEDS_MANUAL_SETUP — large monorepo (93.3 MB ZIP). Review apps/ structure after extraction before running."
+  },
+  "screenity-master": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "browser-extension",
+    "checkCommand": "node --version",
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\screenity-master.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\screenity-master'; cd C:\\EMOVEL\\04_AI_STACK\\screenity-master; npm install",
+    "runCommand": "npm run build  then load unpacked extension in Chrome from build output folder",
+    "healthCheck": "npm run build:prod",
+    "note": "screenity v4.5.3. Browser extension — no server to run. Build then load in chrome://extensions as unpacked extension."
+  },
+  "opencut-main": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "node-monorepo",
+    "checkCommand": "node --version",
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\OpenCut-main.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\OpenCut-main'; cd C:\\EMOVEL\\04_AI_STACK\\OpenCut-main; npm install",
+    "runCommand": "npm run dev:web",
+    "healthCheck": "npm run build",
+    "note": "Small ZIP (0.3 MB) — likely no node_modules included. npm install required after extraction."
   },
   "n8n-master": {
-    "command": "n8n --version",
-    "note": "Requires n8n installed globally or via npx"
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "node-monorepo",
+    "checkCommand": "docker --version  OR  node --version",
+    "installCommandDocker": "docker run -it --rm -p 5678:5678 n8nio/n8n:2.27.0",
+    "installCommandNpx": "npx n8n@2.27.0",
+    "installCommandSource": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\n8n-master.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\n8n-master'; cd C:\\EMOVEL\\04_AI_STACK\\n8n-master; npm install",
+    "runCommand": "npx n8n  OR  docker run -p 5678:5678 n8nio/n8n",
+    "healthCheck": "curl http://localhost:5678",
+    "note": "n8n-monorepo v2.27.0. Prefer Docker or npx over building from source. Source ZIP useful for referencing .agents/skills/ Claude Code integration patterns."
   },
-  "knowledge-work-plugins-main": {
-    "command": null,
-    "note": "Static skill library — no startup command"
+  "claude-council-main": {
+    "status": "ZIP_NOT_EXTRACTED",
+    "type": "claude-code-skill",
+    "checkCommand": null,
+    "installCommand": "Expand-Archive -Path 'C:\\Users\\flavi\\Downloads\\claude-council-main.zip' -DestinationPath 'C:\\EMOVEL\\04_AI_STACK\\claude-council-main'",
+    "activateCommand": "Copy C:\\EMOVEL\\04_AI_STACK\\claude-council-main\\skills\\ into project root, or: npx skills add <path>",
+    "healthCheck": "Verify skills/claude-council/SKILL.md is accessible from project root",
+    "note": "claude-council v0.1.0. Claude Code skill. No npm install needed — skill activates via Claude Code when SKILL.md is reachable."
+  },
+  "claude-cowork": {
+    "status": "NOT_FOUND",
+    "checkCommand": null,
+    "installCommand": null,
+    "note": "Not found in Downloads, Desktop, or C:\\EMOVEL. Cannot register until located."
+  },
+  "gpt-pilot-main": {
+    "status": "EXTRACTED_BROKEN",
+    "extractedPath": "C:\\Users\\flavi\\Desktop\\gpt-pilot-main",
+    "checkCommand": "python main.py --help",
+    "installCommand": "pip install -r requirements.txt",
+    "runCommand": "python main.py",
+    "healthCheck": "python main.py --help",
+    "note": "Missing pydantic. Run pip install -r requirements.txt in a Python venv from the gpt-pilot-main folder."
+  },
+  "claude-code-main": {
+    "status": "OPERATIONAL",
+    "type": "cli",
+    "checkCommand": "claude --version",
+    "installCommand": "npm install -g @anthropic-ai/claude-code",
+    "runCommand": "claude",
+    "healthCheck": "claude --version",
+    "note": "Installed as global CLI. No local repo needed."
   },
   "reflex-main": {
-    "command": "reflex --version",
-    "note": "Requires Reflex installed in active Python env"
+    "status": "EXTRACTED_BROKEN",
+    "extractedPath": "C:\\Users\\flavi\\Desktop\\reflex-main",
+    "checkCommand": "reflex --version",
+    "installCommand": "pip install reflex",
+    "runCommand": "reflex run",
+    "healthCheck": "reflex --version",
+    "note": "reflex not in PATH. Install via pip in active Python environment."
   }
 }

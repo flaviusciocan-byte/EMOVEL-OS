@@ -1,244 +1,341 @@
 # EMOVEL-OS Health Status
 
-**Generated:** 2026-06-21 (updated after local tool scan)
+**Last scan:** 2026-06-21  
+**Method:** Direct filesystem scan + ZIP content inspection
 
 ---
 
-## Readiness Score
+## Readiness Summary
 
-| Metric | Value |
-|---|---|
-| Original stack tools found on disk | 2 / 7 |
-| Original stack tools operational | 0 / 7 |
-| New UI/Visual tools found (ZIPs) | 6 / 6 |
-| New UI/Visual tools extracted | 0 / 6 |
-| Total tools registered | 13 |
-| **Overall readiness** | **Partial — 4 tools usable without action, 8 need extraction or install** |
+| Category | Count | Status |
+|---|---|---|
+| Operational (no action needed) | 1 | claude-code-main |
+| Runnable without extraction | 1 | n8n (via npx/Docker) |
+| Extracted but broken | 2 | gpt-pilot-main, reflex-main |
+| ZIP found, not extracted | 12 | See table below |
+| Not found anywhere | 1 | claude-cowork |
+| **Total registered** | **17** | |
 
 ---
 
-## Original Stack — Tool Registry
+## Tool Health Table
 
-| Tool | Location | Health | Ready |
+| Tool | Status | Blocker | Fix |
 |---|---|---|---|
-| claude-council-main | Prompt-based | No local check needed | Yes |
-| claude-cowork | Session-based | No local check needed | Yes |
-| claude-code-main | Installed as CLI | Active and in use | Yes |
-| n8n-master | via npx | Runnable without extraction | Yes |
-| gpt-pilot-main | C:\Users\flavi\Desktop\gpt-pilot-main | Fail — pydantic missing | No |
-| knowledge-work-plugins-main | NOT FOUND | Not registered | No |
-| reflex-main | C:\Users\flavi\Desktop\reflex-main | Fail — reflex not in PATH | No |
+| claude-code-main | OPERATIONAL | — | — |
+| n8n | RUNNABLE (npx) | Source not extracted | npx n8n or Docker |
+| claude-council-main | ZIP_NOT_EXTRACTED | Not extracted | Extract → copy skills/ to project |
+| ui-ux-pro-max-skill-main | ZIP_NOT_EXTRACTED | Not extracted | Extract → copy .claude/ to project |
+| 21st-sdk-main | ZIP_NOT_EXTRACTED | Not extracted | Extract → npm install |
+| quant-ux-master | ZIP_NOT_EXTRACTED | Not extracted | Extract → npm install → npm run serve |
+| nano-banana-2-ai-main | ZIP_NOT_EXTRACTED | Not extracted + no GEMINI_API_KEY | Extract → npm install → add .env |
+| Nano-Banana-Pro-main | README_ONLY | No runnable code | Extract for reference only |
+| awesome-gpt-image-2 | ZIP_NOT_EXTRACTED | Not extracted | Extract for reference |
+| open-webui-main | ZIP_NOT_EXTRACTED | Not extracted | Docker run OR extract + dual install |
+| penpot-develop | ZIP_NOT_EXTRACTED | Not extracted + needs Clojure or Docker | Extract → docker-compose up |
+| Cap-main | ZIP_NOT_EXTRACTED | Not extracted | Extract → npm install |
+| screenity-master | ZIP_NOT_EXTRACTED | Not extracted | Extract → npm install → build → load in Chrome |
+| opencut-main | ZIP_NOT_EXTRACTED | Not extracted | Extract → npm install → npm run dev:web |
+| n8n-master (source) | ZIP_NOT_EXTRACTED | Not extracted | npx preferred — extract for reference |
+| gpt-pilot-main | EXTRACTED_BROKEN | pydantic missing | pip install -r requirements.txt |
+| reflex-main | EXTRACTED_BROKEN | reflex not in PATH | pip install reflex |
+| claude-cowork | NOT_FOUND | Not in any scanned location | Locate or clone |
 
 ---
 
-## New UI & Visual Tools — Found in Downloads
+## Per-Tool Details
 
-All 6 tools are present as ZIP archives in `C:\Users\flavi\Downloads`. None are extracted. Status below reflects current state.
+### claude-code-main — OPERATIONAL
 
-| Tool | ZIP Found | Extracted | npm install | Ready |
-|---|---|---|---|---|
-| ui-ux-pro-max-skill-main | Yes | No | No | No — needs extraction |
-| 21st-sdk-main | Yes | No | No | No — needs extraction |
-| quant-ux-master | Yes | No | No | No — needs extraction |
-| nano-banana-2-ai-main | Yes | No | No | No — needs extraction |
-| nano-banana-pro-main | Yes | No | N/A (README only) | Partial — extract for reference |
-| awesome-gpt-image-2-api-and-prompts-main | Yes | No | N/A (prompt library) | Partial — extract for reference |
+- **Type:** CLI (global npm install)
+- **Check:** `claude --version`
+- **Action needed:** None
 
 ---
 
-## Tool Details
+### ui-ux-pro-max-skill-main — ZIP_NOT_EXTRACTED
 
-### claude-council-main  [READY — PROMPT LAYER]
-
-- **Description:** Decision validation layer
-- **Type:** Prompt-based skill system
-- **Location:** No local install required
-- **Health:** Operational as prompt skill in EMOVEL-OS workflow
-
----
-
-### claude-cowork  [READY — SESSION LAYER]
-
-- **Description:** Project coordination layer
-- **Type:** Session-based prompt templates
-- **Location:** No local install required
-- **Health:** Operational as session workflow
-
----
-
-### claude-code-main  [READY]
-
-- **Description:** Dev assistance and file editing
-- **Type:** CLI — installed globally
-- **Health:** Active and in use (this session)
-
----
-
-### n8n-master  [READY VIA NPX]
-
-- **Description:** Workflow automation
-- **Type:** Node.js app
-- **Run:** `npx n8n`
-- **Health:** Runnable without local clone
-
----
-
-### gpt-pilot-main  [NOT READY]
-
-- **Description:** Autonomous app builder (Pythagora)
-- **Location:** C:\Users\flavi\Desktop\gpt-pilot-main
-- **Health:** Fail
-- **Issue:** `pydantic` module missing from Python environment
-- **Fix:** `cd C:\Users\flavi\Desktop\gpt-pilot-main && pip install -r requirements.txt`
-
----
-
-### knowledge-work-plugins-main  [NOT FOUND]
-
-- **Description:** Reusable skills and MCP connectors
-- **Location:** Not found on any searched path
-- **Fix:** Locate or clone repository, then run `.\scripts\register-tool.ps1 knowledge-work-plugins-main <path>`
-
----
-
-### reflex-main  [NOT READY]
-
-- **Description:** Python-native reactive UI builder
-- **Location:** C:\Users\flavi\Desktop\reflex-main
-- **Health:** Fail
-- **Issue:** `reflex` not found in PATH
-- **Fix:** `pip install reflex` in active Python environment
-
----
-
-### ui-ux-pro-max-skill-main  [ZIP — NOT EXTRACTED]
-
-- **Description:** Premium AI design intelligence CLI — 161 reasoning rules, 67 UI styles
-- **Category:** Design / UI Direction
-- **ZIP:** C:\Users\flavi\Downloads\ui-ux-pro-max-skill-main.zip (4.8 MB)
-- **npm name:** `uipro-cli` v2.5.0
-- **Runtime:** Python 3.x + Node.js
-- **has README:** Yes | **has package.json:** Yes
-- **Recommended Extract Path:** C:\EMOVEL\04_AI_STACK\ui-ux-pro-max-skill-main
-- **Install after extraction:**
+- **ZIP:** `C:\Users\flavi\Downloads\ui-ux-pro-max-skill-main.zip` (4.8 MB)
+- **Type:** Claude Code plugin (`.claude-plugin` format)
+- **Version:** 2.5.0 by nextlevelbuilder
+- **Skills inside ZIP:** banner-design, brand, design-system, design, slides, ui-styling, ui-ux-pro-max
+- **No npm install required**
+- **Activate:**
   ```powershell
   Expand-Archive -Path "C:\Users\flavi\Downloads\ui-ux-pro-max-skill-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\ui-ux-pro-max-skill-main"
-  cd C:\EMOVEL\04_AI_STACK\ui-ux-pro-max-skill-main
-  npm install
+  # Then copy .claude/ into your project root:
+  Copy-Item -Recurse "C:\EMOVEL\04_AI_STACK\ui-ux-pro-max-skill-main\.claude" -Destination "<your-project>\.claude" -Force
   ```
-- **Integration:** Direction layer for premium page builds. Ref: `knowledge/stack-library/UX_LAYER.md`
 
 ---
 
-### 21st-sdk-main  [ZIP — NOT EXTRACTED]
+### 21st-sdk-main — ZIP_NOT_EXTRACTED
 
-- **Description:** Open-source SDK + runtime for building, deploying, and embedding 21st Agents
-- **Category:** Design / Component System
-- **ZIP:** C:\Users\flavi\Downloads\21st-sdk-main.zip (160 MB)
-- **npm name:** `blank-agent` template v0.0.1
-- **Runtime:** Node.js / React / Next.js (monorepo)
-- **has README:** Yes | **has package.json:** Yes
-- **Recommended Extract Path:** C:\EMOVEL\04_AI_STACK\21st-sdk-main
-- **Install after extraction:**
+- **ZIP:** `C:\Users\flavi\Downloads\21st-sdk-main.zip` (160 MB)
+- **Type:** Node.js monorepo
+- **Package:** `21st-sdk` (root)
+- **Packages inside:** agent-runtime, agent, api-key-security, cli, nextjs, node, python-sdk, react, sandbox-provider, ui
+- **App:** apps/agents-web (Next.js)
+- **Has Dockerfile:** Yes
+- **Install:**
   ```powershell
   Expand-Archive -Path "C:\Users\flavi\Downloads\21st-sdk-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\21st-sdk-main"
   cd C:\EMOVEL\04_AI_STACK\21st-sdk-main
   npm install
+  npm run dev
   ```
-- **Note:** Individual components also installable via `npx shadcn@latest add "https://21st.dev/r/<component>"` without extracting the full SDK
-- **Integration:** Component source for premium landing pages. Ref: `knowledge/stack-library/UX_LAYER.md`
+- **Single-component shortcut (no extraction needed):**
+  ```bash
+  npx shadcn@latest add "https://21st.dev/r/<component>"
+  ```
 
 ---
 
-### quant-ux-master  [ZIP — NOT EXTRACTED]
+### quant-ux-master — ZIP_NOT_EXTRACTED
 
-- **Description:** Open-source UX research and prototyping tool — usability testing, heatmaps, interaction analytics
-- **Category:** Design / UX Research
-- **ZIP:** C:\Users\flavi\Downloads\quant-ux-master.zip (6.2 MB)
-- **npm name:** `quant-ux` v4.1.23
-- **Runtime:** Vue.js / Node.js
-- **has README:** Yes | **has package.json:** Yes
-- **Recommended Extract Path:** C:\EMOVEL\04_AI_STACK\quant-ux-master
-- **Install after extraction:**
+- **ZIP:** `C:\Users\flavi\Downloads\quant-ux-master.zip` (6.1 MB)
+- **Type:** Vue.js web app
+- **Package:** `quant-ux` v4.1.23
+- **Has:** package.json, Dockerfile, docker-compose.yml, Makefile
+- **Scripts:** serve, build, test:unit, lint
+- **Install:**
   ```powershell
   Expand-Archive -Path "C:\Users\flavi\Downloads\quant-ux-master.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\quant-ux-master"
   cd C:\EMOVEL\04_AI_STACK\quant-ux-master
   npm install
-  npm run serve
+  npm run serve     # localhost:8080
+  # OR:
+  docker-compose up
   ```
-- **Integration:** Self-hosted UX validation layer — prototype and user-test EMOVEL page designs pre-launch
 
 ---
 
-### nano-banana-2-ai-main  [ZIP — NOT EXTRACTED]
+### nano-banana-2-ai-main — ZIP_NOT_EXTRACTED
 
-- **Description:** Next.js frontend for Google Gemini 3.1 Flash Image Model — 4K text-to-image, 5-character consistency
-- **Category:** Content / Image Generation
-- **ZIP:** C:\Users\flavi\Downloads\nano-banana-2-ai-main.zip (587 KB)
-- **npm name:** `v0-nanobanana-template` v0.1.0
-- **Runtime:** Next.js / Node.js
-- **has README:** Yes | **has package.json:** Yes
-- **Scripts:** `dev`, `build`, `start`, `lint`
-- **Recommended Extract Path:** C:\EMOVEL\04_AI_STACK\nano-banana-2-ai-main
-- **Install after extraction:**
+- **ZIP:** `C:\Users\flavi\Downloads\nano-banana-2-ai-main.zip` (0.6 MB)
+- **Type:** Next.js app
+- **Package:** `v0-nanobanana-template` v0.1.0
+- **Has:** package.json, README.md, README2.md; folders: app/, components/, components.json
+- **Scripts:** build, dev, lint, start
+- **Requires:** GEMINI_API_KEY in .env.local
+- **Install:**
   ```powershell
   Expand-Archive -Path "C:\Users\flavi\Downloads\nano-banana-2-ai-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\nano-banana-2-ai-main"
   cd C:\EMOVEL\04_AI_STACK\nano-banana-2-ai-main
   npm install
-  npm run dev
+  # Create .env.local with: GEMINI_API_KEY=your_key
+  npm run dev   # localhost:3000
   ```
-- **Integration:** Use for fast AI image generation in content-engine and launch asset workflows. Pairs with awesome-gpt-image-2 prompt library.
 
 ---
 
-### nano-banana-pro-main  [ZIP — NOT EXTRACTED — README ONLY]
+### Nano-Banana-Pro-main — README_ONLY
 
-- **Description:** AI image generator reference — Gemini 2.5 Pro Image Model, native 2K/4K upscaling, 95% character consistency
-- **Category:** Content / Image Generation (Reference)
-- **ZIP:** C:\Users\flavi\Downloads\Nano-Banana-Pro-main.zip (4.8 KB)
-- **Runtime:** Documentation only — no runnable code
-- **has README:** Yes | **has package.json:** No
-- **Recommended Extract Path:** C:\EMOVEL\04_AI_STACK\nano-banana-pro-main
-- **Note:** Extract as reference docs. Use `nano-banana-2-ai-main` for the executable frontend.
+- **ZIP:** `C:\Users\flavi\Downloads\Nano-Banana-Pro-main.zip` (4 KB)
+- **Contains:** README.md only — no code
+- **Action:** Extract for reference documentation only
+- **Use nano-banana-2-ai-main for the runnable version**
 
 ---
 
-### awesome-gpt-image-2-api-and-prompts-main  [ZIP — NOT EXTRACTED]
+### awesome-gpt-image-2-api-and-prompts-main — ZIP_NOT_EXTRACTED
 
-- **Description:** 911 curated prompts for GPT Image 2 API — Seedance 2.0 cinematic workflow, 10-language support, CC0 licensed
-- **Category:** Content / Prompt Library
-- **ZIP:** C:\Users\flavi\Downloads\awesome-gpt-image-2-API-and-Prompts-main.zip (245 MB)
-- **Runtime:** No code — Markdown/JSON prompt library
-- **has README:** Yes | **has package.json:** No
-- **License:** CC0 — free for commercial use
-- **Recommended Extract Path:** C:\EMOVEL\04_AI_STACK\awesome-gpt-image-2-prompts
-- **Install:**
+- **ZIP:** `C:\Users\flavi\Downloads\awesome-gpt-image-2-API-and-Prompts-main.zip` (244.9 MB)
+- **Contains:** README.md (10 languages), `cases/` folder with prompt examples and images, LICENSE (CC0)
+- **No code — prompt reference library**
+- **Extract:**
   ```powershell
   Expand-Archive -Path "C:\Users\flavi\Downloads\awesome-gpt-image-2-API-and-Prompts-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\awesome-gpt-image-2-prompts"
   ```
-- **Integration:** Reference library for n8n image generation workflows and content-engine prompt templates.
 
 ---
 
-## Action List
+### open-webui-main — ZIP_NOT_EXTRACTED
 
-To bring all tools to operational status, complete these steps in order:
+- **ZIP:** `C:\Users\flavi\Downloads\open-webui-main.zip` (53.4 MB)
+- **Type:** Python + SvelteKit
+- **Package:** `open-webui` v0.9.6
+- **Has:** package.json, pyproject.toml, backend/requirements.txt, Dockerfile, docker-compose.yaml (+ 6 variants for GPU/API/OTEL/etc)
+- **Recommended (Docker):**
+  ```bash
+  docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway \
+    -v open-webui:/app/backend/data --name open-webui --restart always \
+    ghcr.io/open-webui/open-webui:main
+  ```
+- **Manual extract:**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\open-webui-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\open-webui-main"
+  cd C:\EMOVEL\04_AI_STACK\open-webui-main
+  npm install
+  pip install -r backend/requirements.txt
+  ```
+
+---
+
+### penpot-develop — ZIP_NOT_EXTRACTED
+
+- **ZIP:** `C:\Users\flavi\Downloads\penpot-develop.zip` (190.2 MB)
+- **Type:** Clojure app (open-source Figma alternative)
+- **Has:** README.md, Dockerfile, docker/images/docker-compose.yaml, docker/devenv/docker-compose.infra.yml, docker/devenv/docker-compose.main.yml
+- **No package.json** — Clojure/ClojureScript codebase
+- **Status:** NEEDS_MANUAL_SETUP
+- **Docker (recommended):**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\penpot-develop.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\penpot-develop"
+  cd C:\EMOVEL\04_AI_STACK\penpot-develop
+  docker-compose -f docker/images/docker-compose.yaml up
+  ```
+
+---
+
+### Cap-main — ZIP_NOT_EXTRACTED
+
+- **ZIP:** `C:\Users\flavi\Downloads\Cap-main.zip` (93.3 MB)
+- **Type:** Node.js monorepo (open-source Loom alternative)
+- **Package:** `cap` (no version in root)
+- **Has:** package.json, README.md, Dockerfile, `.claude/` folder
+- **Scripts:** build, build:web, build:web:docker, cap-setup
+- **Status:** NEEDS_MANUAL_SETUP (93 MB — review apps/ structure first)
+- **Install:**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\Cap-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\Cap-main"
+  cd C:\EMOVEL\04_AI_STACK\Cap-main
+  npm install
+  npm run build:web
+  ```
+
+---
+
+### screenity-master — ZIP_NOT_EXTRACTED
+
+- **ZIP:** `C:\Users\flavi\Downloads\screenity-master.zip` (10.9 MB)
+- **Type:** Chrome browser extension
+- **Package:** `screenity` v4.5.3
+- **Has:** package.json, README.md
+- **Scripts:** build, build:dev, build:prod, build:local, start, dev
+- **Install and load:**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\screenity-master.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\screenity-master"
+  cd C:\EMOVEL\04_AI_STACK\screenity-master
+  npm install
+  npm run build:prod
+  # Then: Chrome → chrome://extensions → Load unpacked → select build output folder
+  ```
+
+---
+
+### OpenCut-main — ZIP_NOT_EXTRACTED
+
+- **ZIP:** `C:\Users\flavi\Downloads\OpenCut-main.zip` (0.3 MB)
+- **Type:** Node.js monorepo (open-source video editor)
+- **Package:** `opencut`
+- **Has:** package.json, README.md; folder: apps/
+- **Scripts:** dev, dev:web, build, deploy
+- **Install:**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\OpenCut-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\OpenCut-main"
+  cd C:\EMOVEL\04_AI_STACK\OpenCut-main
+  npm install
+  npm run dev:web
+  ```
+
+---
+
+### n8n-master — ZIP_NOT_EXTRACTED
+
+- **ZIP:** `C:\Users\flavi\Downloads\n8n-master.zip` (51.5 MB)
+- **Type:** Node.js monorepo
+- **Package:** `n8n-monorepo` v2.27.0
+- **Has:** package.json, README.md, Dockerfiles, docker-compose
+- **Also has:** `.agents/skills/` with Claude Code agent skills: community-pr-readiness-check, content-design, conventions, create-community-node-lint-rule, create-issue, create-pr
+- **Preferred runtime (Docker or npx — do NOT build from source):**
+  ```bash
+  # Docker:
+  docker run -it --rm -p 5678:5678 n8nio/n8n:2.27.0
+  # Or npx:
+  npx n8n@2.27.0
+  ```
+- **Source extract (for reference/development only):**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\n8n-master.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\n8n-master"
+  ```
+
+---
+
+### claude-council-main — ZIP_NOT_EXTRACTED
+
+- **ZIP:** `C:\Users\flavi\Downloads\claude-council-main.zip` (4 KB)
+- **Type:** Claude Code skill
+- **Package:** `claude-council` v0.1.0
+- **Has:** package.json, README.md, `skills/claude-council/SKILL.md`
+- **Description:** "Pressure-test high-stakes decisions with a structured LLM Council — 5 advisors, peer review, forced debate, dual-chairman synthesis with dissent preservation."
+- **Install:**
+  ```powershell
+  Expand-Archive -Path "C:\Users\flavi\Downloads\claude-council-main.zip" -DestinationPath "C:\EMOVEL\04_AI_STACK\claude-council-main"
+  # Copy skills into project:
+  Copy-Item -Recurse "C:\EMOVEL\04_AI_STACK\claude-council-main\skills" -Destination "<your-project>\skills" -Force
+  ```
+
+---
+
+### gpt-pilot-main — EXTRACTED_BROKEN
+
+- **Path:** `C:\Users\flavi\Desktop\gpt-pilot-main`
+- **Issue:** `pydantic` missing from Python environment
+- **Fix:**
+  ```bash
+  cd C:\Users\flavi\Desktop\gpt-pilot-main
+  pip install -r requirements.txt
+  ```
+
+---
+
+### reflex-main — EXTRACTED_BROKEN
+
+- **Path:** `C:\Users\flavi\Desktop\reflex-main`
+- **Issue:** `reflex` not found in PATH
+- **Fix:**
+  ```bash
+  pip install reflex
+  ```
+
+---
+
+### claude-cowork — NOT_FOUND
+
+- Not present in Downloads, Desktop, or C:\EMOVEL
+- Cannot be registered until located or cloned
+
+---
+
+## Action Priority
 
 ```
-Priority 1 — Fix broken tools
-[ ] gpt-pilot-main:  pip install -r requirements.txt
-[ ] reflex-main:     pip install reflex
+PRIORITY 1 — Activate immediately (no extraction, just copy)
+[ ] ui-ux-pro-max-skill-main  →  copy .claude/ to project root
+[ ] claude-council-main       →  extract → copy skills/ to project root
 
-Priority 2 — Extract UI tools (design layer)
-[ ] ui-ux-pro-max-skill-main → C:\EMOVEL\04_AI_STACK\  → npm install
-[ ] 21st-sdk-main            → C:\EMOVEL\04_AI_STACK\  → npm install
-[ ] quant-ux-master          → C:\EMOVEL\04_AI_STACK\  → npm install
+PRIORITY 2 — Fix already-extracted broken tools
+[ ] gpt-pilot-main            →  pip install -r requirements.txt
+[ ] reflex-main               →  pip install reflex
 
-Priority 3 — Extract content tools (image generation)
-[ ] nano-banana-2-ai-main              → C:\EMOVEL\04_AI_STACK\  → npm install
-[ ] nano-banana-pro-main               → C:\EMOVEL\04_AI_STACK\  → reference only
-[ ] awesome-gpt-image-2-prompts        → C:\EMOVEL\04_AI_STACK\  → reference only
+PRIORITY 3 — Extract and run design tools
+[ ] quant-ux-master           →  extract → npm install → npm run serve
+[ ] nano-banana-2-ai-main     →  extract → npm install → add GEMINI_API_KEY → npm run dev
+[ ] penpot-develop            →  extract → docker-compose up
 
-Priority 4 — Locate or clone missing tools
-[ ] knowledge-work-plugins-main        → register-tool.ps1 after locating
+PRIORITY 4 — Extract knowledge and content tools
+[ ] open-webui-main           →  docker run ghcr.io/open-webui/open-webui:main
+[ ] awesome-gpt-image-2       →  extract for reference
+[ ] nano-banana-pro-main      →  extract for reference
+
+PRIORITY 5 — Extract remaining tools
+[ ] 21st-sdk-main             →  extract → npm install
+[ ] Cap-main                  →  extract → npm install
+[ ] screenity-master          →  extract → npm install → build → load in Chrome
+[ ] OpenCut-main              →  extract → npm install → npm run dev:web
+[ ] n8n-master                →  extract for reference (prefer npx/Docker to run)
+
+NOT ACTIONABLE
+[ ] claude-cowork             →  NOT FOUND — locate source before proceeding
 ```

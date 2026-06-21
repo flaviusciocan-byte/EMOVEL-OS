@@ -1,90 +1,141 @@
 # EMOVEL-OS System Status
 
-**Generated:** 2026-06-21 (updated after local tool scan)
+**Last scan:** 2026-06-21  
+**Method:** Direct filesystem search + ZIP content inspection (no agents, no guesswork)
 
 ---
 
-## Drive Scan Results
+## Drive Scan
 
-| Drive | Path | Status |
-|---|---|---|
-| C: | C:\EMOVEL | Exists — 04_AI_STACK, 10_EMOVEL_BUILDER, 20_PRODUCTS, 30_LABS and others |
-| C: | C:\Users\flavi\Downloads | Exists — 6 tool ZIPs found |
-| C: | C:\Users\flavi\Desktop | Exists — gpt-pilot-main, reflex-main extracted |
-| D: | D:\EMOVEL | Drive not present |
-| E: | E:\EMOVEL | Drive not present |
-| F: | F:\ | Drive exists — no EMOVEL folder |
+| Path | Found |
+|---|---|
+| C:\Users\flavi\Downloads | Yes — 13 ZIPs found |
+| C:\Users\flavi\Desktop | Yes — gpt-pilot-main, reflex-main extracted |
+| C:\EMOVEL | Yes — 04_AI_STACK empty, 30_LABS has EMOVEL_PAGE_BUILDER_V0_1 |
+| D:\EMOVEL | Drive not present |
+| E:\EMOVEL | Drive not present |
+| F:\ | Drive exists — no EMOVEL folder |
 
 ---
 
 ## Tool Registry
 
-### Original Stack Tools
+### ZIPs Found in C:\Users\flavi\Downloads
 
-| Tool | Location | Status | Ready |
-|---|---|---|---|
-| claude-council-main | Not found as local repo | Prompt-based — no install needed | Yes (prompt) |
-| claude-cowork | Not found as local repo | Session-based — no install needed | Yes (prompt) |
-| gpt-pilot-main | C:\Users\flavi\Desktop\gpt-pilot-main | Extracted — missing pydantic | Partial |
-| claude-code-main | Installed as CLI | CLI — no repo needed | Yes |
-| n8n-master | Not extracted | Runnable via npx n8n | Yes (npx) |
-| knowledge-work-plugins-main | Not found | Needs registration | No |
-| reflex-main | C:\Users\flavi\Desktop\reflex-main | Extracted — reflex not in PATH | Partial |
+| Tool | ZIP Path | Size | Type | package.json | requirements.txt | Dockerfile | docker-compose | Status |
+|---|---|---|---|---|---|---|---|---|
+| ui-ux-pro-max-skill-main | Downloads\ui-ux-pro-max-skill-main.zip | 4.8 MB | claude-plugin | No | No | No | No | ZIP_NOT_EXTRACTED |
+| 21st-sdk-main | Downloads\21st-sdk-main.zip | 160 MB | node-monorepo | Yes | No | Yes | No | ZIP_NOT_EXTRACTED |
+| quant-ux-master | Downloads\quant-ux-master.zip | 6.1 MB | vue-app | Yes (v4.1.23) | No | Yes | Yes | ZIP_NOT_EXTRACTED |
+| nano-banana-2-ai-main | Downloads\nano-banana-2-ai-main.zip | 0.6 MB | nextjs-app | Yes (v0.1.0) | No | No | No | ZIP_NOT_EXTRACTED |
+| Nano-Banana-Pro-main | Downloads\Nano-Banana-Pro-main.zip | 0.004 MB | documentation | No | No | No | No | README_ONLY |
+| awesome-gpt-image-2-api | Downloads\awesome-gpt-image-2-API-and-Prompts-main.zip | 244.9 MB | prompt-library | No | No | No | No | ZIP_NOT_EXTRACTED |
+| open-webui-main | Downloads\open-webui-main.zip | 53.4 MB | python-svelte | Yes (v0.9.6) | Yes | Yes | Yes | ZIP_NOT_EXTRACTED |
+| penpot-develop | Downloads\penpot-develop.zip | 190.2 MB | clojure-app | No | No | Yes | Yes | ZIP_NOT_EXTRACTED |
+| Cap-main | Downloads\Cap-main.zip | 93.3 MB | node-monorepo | Yes | No | Yes | No | ZIP_NOT_EXTRACTED |
+| screenity-master | Downloads\screenity-master.zip | 10.9 MB | browser-ext | Yes (v4.5.3) | No | No | No | ZIP_NOT_EXTRACTED |
+| OpenCut-main | Downloads\OpenCut-main.zip | 0.3 MB | node-monorepo | Yes | No | No | No | ZIP_NOT_EXTRACTED |
+| n8n-master | Downloads\n8n-master.zip | 51.5 MB | node-monorepo | Yes (v2.27.0) | No | Yes | Yes | ZIP_NOT_EXTRACTED |
+| claude-council-main | Downloads\claude-council-main.zip | 0.004 MB | claude-skill | Yes (v0.1.0) | No | No | No | ZIP_NOT_EXTRACTED |
 
-### Premium UI & Visual Tools — Found in Downloads (ZIPs)
+### Extracted Tools on Desktop
 
-| Tool | ZIP Path | Size | Has package.json | Status |
-|---|---|---|---|---|
-| ui-ux-pro-max-skill-main | C:\Users\flavi\Downloads\ui-ux-pro-max-skill-main.zip | 4.8 MB | Yes (`uipro-cli` v2.5.0) | ZIP — not extracted |
-| 21st-sdk-main | C:\Users\flavi\Downloads\21st-sdk-main.zip | 160 MB | Yes (monorepo template) | ZIP — not extracted |
-| quant-ux-master | C:\Users\flavi\Downloads\quant-ux-master.zip | 6.2 MB | Yes (`quant-ux` v4.1.23) | ZIP — not extracted |
-| nano-banana-2-ai-main | C:\Users\flavi\Downloads\nano-banana-2-ai-main.zip | 587 KB | Yes (`v0-nanobanana-template` v0.1.0) | ZIP — not extracted |
-| nano-banana-pro-main | C:\Users\flavi\Downloads\Nano-Banana-Pro-main.zip | 4.8 KB | No (README only) | ZIP — not extracted |
-| awesome-gpt-image-2-api-and-prompts-main | C:\Users\flavi\Downloads\awesome-gpt-image-2-API-and-Prompts-main.zip | 245 MB | No (prompt library) | ZIP — not extracted |
+| Tool | Path | Status |
+|---|---|---|
+| gpt-pilot-main | C:\Users\flavi\Desktop\gpt-pilot-main | EXTRACTED_BROKEN — pydantic missing |
+| reflex-main | C:\Users\flavi\Desktop\reflex-main | EXTRACTED_BROKEN — reflex not in PATH |
+
+### Tools Not Requiring Local Install
+
+| Tool | Status |
+|---|---|
+| claude-code-main | OPERATIONAL — installed as global CLI |
+| n8n | RUNNABLE via npx n8n or Docker without extracting source |
+| claude-cowork | NOT_FOUND — not in any searched location |
 
 ---
 
-## Summary
+## What Each Tool Actually Is
 
-- **Original stack tools found:** 2 of 7 extracted and on disk
-- **New tools found as ZIPs:** 6 in C:\Users\flavi\Downloads
-- **Total tools registered:** 13
-- **Tools ready to use without extraction:** claude-council-main, claude-cowork, claude-code-main, n8n-master (via npx)
-- **Tools needing extraction before use:** ui-ux-pro-max-skill-main, 21st-sdk-main, quant-ux-master, nano-banana-2-ai-main, nano-banana-pro-main, awesome-gpt-image-2-api-and-prompts-main
+Based on ZIP inspection:
+
+- **ui-ux-pro-max-skill-main** — Claude Code plugin with 7 skills (banner-design, brand, design-system, design, slides, ui-styling, ui-ux-pro-max). No npm/pip. Activate by copying `.claude/` folder into project root.
+
+- **21st-sdk-main** — SDK monorepo for 21st Agents. Packages: agent-runtime, agent, cli, nextjs, node, python-sdk, react, ui. App: agents-web (Next.js).
+
+- **quant-ux-master** — Vue.js UX research tool `quant-ux` v4.1.23. Has Dockerfile + docker-compose. Scripts: serve, build, test:unit, lint.
+
+- **nano-banana-2-ai-main** — Next.js `v0-nanobanana-template` v0.1.0. Has `app/`, `components/`, `components.json`. Gemini 3.1 Flash Image frontend.
+
+- **Nano-Banana-Pro-main** — README.md only. Zero runnable code.
+
+- **awesome-gpt-image-2-api** — Prompt library, `cases/` folder. README in 10 languages. CC0. 244.9 MB due to image examples in cases/.
+
+- **open-webui-main** — `open-webui` v0.9.6. Python backend (pyproject.toml + requirements.txt) + SvelteKit frontend. Multiple docker-compose configs (GPU, API-only, OTEL, data).
+
+- **penpot-develop** — Clojure project. No package.json. Docker: `docker/images/docker-compose.yaml`. Two devenv compose files.
+
+- **Cap-main** — `cap` package (no version in root). 93.3 MB monorepo. Has `.claude/` folder — Claude Code integration inside Cap itself.
+
+- **screenity-master** — `screenity` v4.5.3 browser extension. Build produces Chrome extension loadable as unpacked.
+
+- **OpenCut-main** — `opencut` monorepo. 0.3 MB (no node_modules). Scripts: dev, dev:web, build, deploy.
+
+- **n8n-master** — `n8n-monorepo` v2.27.0. Has `.agents/skills/` with Claude Code agent skills: community-pr-readiness-check, content-design, conventions, create-issue, create-pr.
+
+- **claude-council-main** — `claude-council` v0.1.0 Claude Code skill. Skills in `skills/claude-council/SKILL.md`. Multi-advisor decision review system.
 
 ---
 
-## Extraction Instructions
+## Recommended Extract Target
 
-Recommended extraction target: `C:\EMOVEL\04_AI_STACK\`
+All ZIPs should be extracted to:
 
-To extract all newly found ZIPs:
+```
+C:\EMOVEL\04_AI_STACK\   (currently empty — confirmed by scan)
+```
+
+---
+
+## Bulk Extraction Script
 
 ```powershell
-$downloads = "C:\Users\flavi\Downloads"
-$target    = "C:\EMOVEL\04_AI_STACK"
+$dl  = "C:\Users\flavi\Downloads"
+$tgt = "C:\EMOVEL\04_AI_STACK"
 
-$zips = @(
-    "ui-ux-pro-max-skill-main.zip",
-    "21st-sdk-main.zip",
-    "quant-ux-master.zip",
-    "nano-banana-2-ai-main.zip",
-    "Nano-Banana-Pro-main.zip",
-    "awesome-gpt-image-2-API-and-Prompts-main.zip"
+$extractions = @(
+    @{ zip="ui-ux-pro-max-skill-main.zip"; dir="ui-ux-pro-max-skill-main" },
+    @{ zip="21st-sdk-main.zip";            dir="21st-sdk-main" },
+    @{ zip="quant-ux-master.zip";          dir="quant-ux-master" },
+    @{ zip="nano-banana-2-ai-main.zip";    dir="nano-banana-2-ai-main" },
+    @{ zip="Nano-Banana-Pro-main.zip";     dir="nano-banana-pro-ref" },
+    @{ zip="open-webui-main.zip";          dir="open-webui-main" },
+    @{ zip="penpot-develop.zip";           dir="penpot-develop" },
+    @{ zip="Cap-main.zip";                 dir="Cap-main" },
+    @{ zip="screenity-master.zip";         dir="screenity-master" },
+    @{ zip="OpenCut-main.zip";             dir="OpenCut-main" },
+    @{ zip="n8n-master.zip";               dir="n8n-master" },
+    @{ zip="claude-council-main.zip";      dir="claude-council-main" }
 )
 
-foreach ($zip in $zips) {
-    $name = [System.IO.Path]::GetFileNameWithoutExtension($zip)
-    Expand-Archive -Path "$downloads\$zip" -DestinationPath "$target\$name" -Force
-    Write-Host "Extracted: $name"
+foreach ($e in $extractions) {
+    $out = "$tgt\$($e.dir)"
+    if (-not (Test-Path $out)) {
+        Write-Host "Extracting $($e.zip) ..."
+        Expand-Archive -Path "$dl\$($e.zip)" -DestinationPath $out
+    } else {
+        Write-Host "Already exists: $($e.dir)"
+    }
 }
 ```
 
-After extraction, run `npm install` in each Node.js project:
+After extraction, run npm install in Node.js projects:
 
 ```powershell
-foreach ($proj in @("ui-ux-pro-max-skill-main", "21st-sdk-main", "quant-ux-master", "nano-banana-2-ai-main")) {
-    Push-Location "C:\EMOVEL\04_AI_STACK\$proj"
+$npmProjects = @("21st-sdk-main","quant-ux-master","nano-banana-2-ai-main","Cap-main","screenity-master","OpenCut-main","n8n-master")
+foreach ($p in $npmProjects) {
+    Write-Host "npm install: $p"
+    Push-Location "C:\EMOVEL\04_AI_STACK\$p"
     npm install
     Pop-Location
 }
@@ -92,14 +143,14 @@ foreach ($proj in @("ui-ux-pro-max-skill-main", "21st-sdk-main", "quant-ux-maste
 
 ---
 
-## C:\EMOVEL Structure (Reference)
+## C:\EMOVEL Structure (Verified)
 
 ```
 C:\EMOVEL\
 ├── 01_PROJECTS\
 ├── 02_INSTALLERS\
 ├── 03_DRIVERS\
-├── 04_AI_STACK\          ← Recommended extraction target for new tools
+├── 04_AI_STACK\             ← EMPTY — target for all ZIPs
 ├── 05_BACKUPS\
 ├── 06_KEYS_LOCAL_PRIVATE\
 ├── 07_LOGS\
@@ -109,21 +160,10 @@ C:\EMOVEL\
 ├── 10_EMOVEL_BUILDER\
 ├── 20_PRODUCTS\
 ├── 30_LABS\
+│   └── EMOVEL_PAGE_BUILDER_V0_1\    ← has node_modules (extracted project)
 ├── 99_DISABLED_MODELS\
 ├── 99_TEMP_AUDIT\
 └── AUTOPILOT_FACTORY_V1\
+    └── 07_AUTOMATION\
+        └── n8n_later\               ← contains COMFYUI, emovel-ui-rebuilder, EMOVEL_PAGE_BUILDER dirs
 ```
-
----
-
-## Missing Tools
-
-Run `register-tool.ps1` for each missing tool:
-
-```powershell
-.\scripts\register-tool.ps1 "tool-name"
-# or specify path explicitly:
-.\scripts\register-tool.ps1 "tool-name" "C:\path\to\tool"
-```
-
-See [docs/INSTALLATION.md](INSTALLATION.md) for expected paths.
