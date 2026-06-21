@@ -479,6 +479,10 @@ function actionQueuePath(projectDir: string) {
   return path.join(projectDir, "ACTION_QUEUE.md");
 }
 
+function executorPromptsDirectory(projectDir: string) {
+  return path.join(projectDir, "executor-prompts");
+}
+
 function actionQueueTemplate(cleanSlug: string): ActionQueueTask[] {
   const projectPath = `projects/generated/${cleanSlug}`;
 
@@ -748,6 +752,162 @@ export async function updateActionQueueTaskStatus(
   await writeFile(filePath, updated, "utf8");
 
   return filePath;
+}
+
+function renderExecutorPrompt(
+  cleanSlug: string,
+  task: ActionQueueTask,
+  executionPlan: string,
+  actionQueue: string
+) {
+  const projectName = projectNameFromSlug(cleanSlug);
+  const generatedAt = new Date().toISOString();
+  const planContext =
+    executionPlan
+      .replace(/^# .+\n+/, "")
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .slice(0, 10)
+      .join("\n") || "Use the local execution plan as the source of truth for this task.";
+  const queueContext =
+    actionQueue
+      .split(`### ${task.id}`)[0]
+      .split("\n")
+      .filter(Boolean)
+      .slice(-8)
+      .join("\n") || "This task is part of the local EMOVEL Action Queue.";
+
+  return `# Executor Prompt: ${task.taskName}
+
+Generated locally by EMOVEL Prompt Studio v1.10 execution layer on ${generatedAt}.
+
+## Project Context
+
+- Project: ${projectName}
+- Slug: ${cleanSlug}
+- Source folder: projects/generated/${cleanSlug}/
+- Action queue: projects/generated/${cleanSlug}/ACTION_QUEUE.md
+
+Execution plan context:
+
+${planContext}
+
+Queue context:
+
+${queueContext}
+
+## Task Objective
+
+${task.prompt}
+
+## Input Files
+
+- ${task.inputFile}
+- projects/generated/${cleanSlug}/execution-plan.md
+- projects/generated/${cleanSlug}/ACTION_QUEUE.md
+
+## Expected Output Files
+
+- ${task.outputFile}
+
+## Selected Tool/Owner
+
+${task.ownerTool}
+
+## Execution Mode
+
+${task.mode}
+
+## Constraints
+
+- Keep the work local to EMOVEL-OS control-center files and registered external tools.
+- Do not call paid APIs.
+- Do not execute shell commands from Prompt Studio.
+- Do not publish, post, or connect commerce automatically.
+- Use existing generated project files as source material.
+- Preserve the current project slug and output paths.
+- If a tool is unavailable, document the fallback instead of pretending it ran.
+
+## Acceptance Criteria
+
+- The task output is specific to ${projectName}.
+- The expected output file path is created or clearly updated.
+- The output references the selected owner/tool and real input files.
+- The result is production-oriented and avoids generic placeholder language.
+- Manual work is clearly marked when automation is not available.
+- The Action Queue task can be moved to Done only after the output has been reviewed.
+`;
+}
+
+export async function createExecutorPrompts(slug: string) {
+  const { cleanSlug, projectDir } = await projectDirectory(slug);
+  const actionQueue = await readProjectFile(projectDir, "ACTION_QUEUE.md");
+
+  if (!actionQueue.trim()) {
+    throw new Error("ACTION_QUEUE.md must exist before executor prompts can be generated.");
+  }
+
+  const tasks = await readActionQueue(cleanSlug);
+
+  if (!tasks?.length) {
+    throw new Error("No action queue tasks were found.");
+  }
+
+  const executionPlan = await readProjectFile(projectDir, "execution-plan.md");
+  const promptsDir = executorPromptsDirectory(projectDir);
+
+  await mkdir(promptsDir, { recursive: true });
+
+  return Promise.all(
+    tasks.map(async (task) => {
+      const filename = `${task.id}.md`;
+      const filePath = path.join(promptsDir, filename);
+      const content = renderExecutorPrompt(cleanSlug, task, executionPlan, actionQueue);
+
+      await writeFile(filePath, content, "utf8");
+
+      return filePath;
+    })
+  );
+}
+
+export async function readExecutorPrompts(slug: string): Promise<GeneratedProjectFile[]> {
+  const cleanSlug = safeSlug(slug);
+
+  if (!cleanSlug || cleanSlug !== slug) {
+    return [];
+  }
+
+  const promptsDir = executorPromptsDirectory(path.join(generatedRoot(), cleanSlug));
+
+  try {
+    const stats = await stat(promptsDir);
+
+    if (!stats.isDirectory()) {
+      return [];
+    }
+  } catch {
+    return [];
+  }
+
+  const entries = await readdir(promptsDir, { withFileTypes: true });
+  const files = await Promise.all(
+    entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(async (entry) => {
+        const content = await readFile(path.join(promptsDir, entry.name), "utf8");
+
+        return {
+          filename: `executor-prompts/${entry.name}`,
+          content,
+          exists: true
+        };
+      })
+  );
+
+  return files;
 }
 
 export async function createBuildHandoff(slug: string) {

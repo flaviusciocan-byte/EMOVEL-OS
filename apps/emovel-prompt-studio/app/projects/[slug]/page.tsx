@@ -8,10 +8,12 @@ import {
   createActionQueue,
   createBuildHandoff,
   createBuilderWorkspace,
+  createExecutorPrompts,
   createGptPilotBuildHandoff,
   projectNameFromSlug,
   readActionQueue,
   readBuildStatus,
+  readExecutorPrompts,
   readGeneratedProject,
   updateActionQueueTaskStatus,
   type ActionQueueStatus,
@@ -75,6 +77,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const files = await readGeneratedProject(params.slug);
   const buildStatus = await readBuildStatus(params.slug);
   const actionQueue = await readActionQueue(params.slug);
+  const executorPrompts = await readExecutorPrompts(params.slug);
 
   if (!files) {
     notFound();
@@ -121,6 +124,13 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     const status = String(formData.get("status") || "") as ActionQueueStatus;
 
     await updateActionQueueTaskStatus(params.slug, taskId, status);
+    revalidatePath(`/projects/${params.slug}`);
+  }
+
+  async function createExecutorPromptsAction() {
+    "use server";
+
+    await createExecutorPrompts(params.slug);
     revalidatePath(`/projects/${params.slug}`);
   }
 
@@ -329,6 +339,62 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         ) : hasExecutionPlan ? (
           <p className="mt-4 rounded-emovel border border-line bg-cloud p-4 font-mono text-xs font-bold text-slate-600">
             ACTION_QUEUE.md has not been generated yet.
+          </p>
+        ) : null}
+      </section>
+
+      <section className="mb-6 rounded-emovel border border-line bg-white p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-blue">
+              Execution
+            </p>
+            <h2 className="mt-2 text-2xl font-black tracking-[-0.03em]">Executor Prompts</h2>
+            <p className="mt-2 max-w-3xl text-sm font-bold leading-6 text-slate-600">
+              Generate Executor Prompts creates one markdown brief per Action Queue task under
+              projects/generated/{params.slug}/executor-prompts/.
+            </p>
+          </div>
+          <form action={createExecutorPromptsAction}>
+            <button
+              className="rounded-emovel bg-mint px-5 py-3 font-black text-ink transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!actionQueue?.length}
+              type="submit"
+            >
+              Generate Executor Prompts
+            </button>
+          </form>
+        </div>
+
+        {!actionQueue?.length ? (
+          <p className="mt-4 rounded-emovel border border-line bg-cloud p-4 font-mono text-xs font-bold text-slate-600">
+            Create ACTION_QUEUE.md before generating executor prompts.
+          </p>
+        ) : null}
+
+        {executorPrompts.length ? (
+          <div className="mt-5">
+            <h3 className="text-lg font-black tracking-[-0.02em]">View executor prompts</h3>
+            <div className="mt-3 grid gap-4">
+              {executorPrompts.map((prompt) => (
+                <article className="overflow-hidden rounded-emovel border border-line bg-cloud" key={prompt.filename}>
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white px-5 py-4">
+                    <div>
+                      <h4 className="text-base font-black">{titleFromFilename(prompt.filename.split("/").pop() || prompt.filename)}</h4>
+                      <p className="mt-1 font-mono text-xs font-bold text-slate-600">{prompt.filename}</p>
+                    </div>
+                    <CopyMarkdownButton content={prompt.content} labelText="Copy executor prompt" />
+                  </div>
+                  <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap p-5 font-mono text-sm leading-7 text-slate-800">
+                    {prompt.content}
+                  </pre>
+                </article>
+              ))}
+            </div>
+          </div>
+        ) : actionQueue?.length ? (
+          <p className="mt-4 rounded-emovel border border-line bg-cloud p-4 font-mono text-xs font-bold text-slate-600">
+            No executor prompts have been generated yet.
           </p>
         ) : null}
       </section>
