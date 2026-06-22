@@ -17,6 +17,14 @@ type LocalProject = {
 type ReadinessStatus = "Draft" | "Needs Work" | "Ready to Build" | "Ready to Launch";
 type FilterValue = "All" | "Needs Work" | "Ready to Build" | "Ready to Launch";
 type SortValue = "newest" | "highest-readiness" | "lowest-readiness";
+type ReviewMetricStatus = "Weak" | "Acceptable" | "Strong";
+
+type ReadinessExplanation = {
+  score: number;
+  status: ReviewMetricStatus;
+  whyThisScore: string;
+  whatImprovesIt: string;
+};
 
 const PROJECTS_KEY = "emovel-projects";
 const filters: FilterValue[] = ["All", "Needs Work", "Ready to Build", "Ready to Launch"];
@@ -40,19 +48,55 @@ function assetCount(project: LocalProject) {
   return Object.keys(project.assets).length;
 }
 
+function scoreStatus(score: number): ReviewMetricStatus {
+  if (score >= 8) return "Strong";
+  if (score >= 6) return "Acceptable";
+  return "Weak";
+}
+
+function fallbackExplanation(label: string, score: number): ReadinessExplanation {
+  if (!score) {
+    return {
+      score,
+      status: "Weak",
+      whyThisScore: `${label} has not been generated for this local project yet.`,
+      whatImprovesIt: "Open the workspace so EMOVEL can hydrate the project assets and review layer.",
+    };
+  }
+
+  return {
+    score,
+    status: scoreStatus(score),
+    whyThisScore: `${label} is ${score}/10 based on the deterministic review of the generated workspace assets.`,
+    whatImprovesIt: "Open the Review section for the full missing and completed element breakdown.",
+  };
+}
+
 function readReview(project: LocalProject) {
   const review = project.assets?.review as
     | {
         productReadiness?: number;
         buildReadiness?: number;
         launchReadiness?: number;
+        productReadinessExplanation?: ReadinessExplanation;
+        buildReadinessExplanation?: ReadinessExplanation;
+        launchReadinessExplanation?: ReadinessExplanation;
       }
     | undefined;
+  const productReadiness = review?.productReadiness || 0;
+  const buildReadiness = review?.buildReadiness || 0;
+  const launchReadiness = review?.launchReadiness || 0;
 
   return {
-    productReadiness: review?.productReadiness || 0,
-    buildReadiness: review?.buildReadiness || 0,
-    launchReadiness: review?.launchReadiness || 0,
+    productReadiness,
+    buildReadiness,
+    launchReadiness,
+    productReadinessExplanation:
+      review?.productReadinessExplanation || fallbackExplanation("Product Readiness", productReadiness),
+    buildReadinessExplanation:
+      review?.buildReadinessExplanation || fallbackExplanation("Build Readiness", buildReadiness),
+    launchReadinessExplanation:
+      review?.launchReadinessExplanation || fallbackExplanation("Launch Readiness", launchReadiness),
   };
 }
 
@@ -86,6 +130,20 @@ function statusClass(status: ReadinessStatus) {
     return "border-amber-300/25 bg-amber-300/10 text-amber-200";
   }
   return "border-white/[0.08] bg-white/[0.035] text-white/42";
+}
+
+function statusRationale(status: ReadinessStatus, project: LocalProject) {
+  const review = readReview(project);
+  if (status === "Draft") {
+    return "No complete review data is stored yet. Open the workspace to generate the readiness layer.";
+  }
+  if (status === "Ready to Launch") {
+    return "Product, build, and launch scores are high enough for a final publish pass.";
+  }
+  if (status === "Ready to Build") {
+    return "Product and build scores are strong, but launch assets still need final preparation.";
+  }
+  return `Needs work because the average readiness is ${averageReadiness(project)}/10. Improve the lowest score first: Product ${review.productReadiness}/10, Build ${review.buildReadiness}/10, Launch ${review.launchReadiness}/10.`;
 }
 
 function readProjects() {
@@ -250,21 +308,71 @@ export default function ProjectsPage() {
 
                       <div className="mt-4 grid gap-2 sm:grid-cols-3">
                         {[
-                          { label: "Product", value: review.productReadiness },
-                          { label: "Build", value: review.buildReadiness },
-                          { label: "Launch", value: review.launchReadiness },
+                          {
+                            label: "Product",
+                            value: review.productReadiness,
+                            explanation: review.productReadinessExplanation,
+                          },
+                          {
+                            label: "Build",
+                            value: review.buildReadiness,
+                            explanation: review.buildReadinessExplanation,
+                          },
+                          {
+                            label: "Launch",
+                            value: review.launchReadiness,
+                            explanation: review.launchReadinessExplanation,
+                          },
                         ].map((item) => (
-                          <div key={item.label} className="rounded-2xl border border-white/[0.055] bg-black/16 px-3 py-2">
-                            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/30">
-                              {item.label}
-                            </p>
-                            <p className="mt-1 text-lg font-black text-white">
-                              {item.value || "-"}
-                              {item.value ? <span className="text-xs text-white/30">/10</span> : null}
-                            </p>
-                          </div>
+                          <details
+                            key={item.label}
+                            className="group/score rounded-2xl border border-white/[0.055] bg-black/16 px-3 py-2 transition hover:border-[#A855F7]/22"
+                            title={item.explanation.whyThisScore}
+                          >
+                            <summary className="cursor-pointer list-none">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/30">
+                                    {item.label}
+                                  </p>
+                                  <p className="mt-1 text-lg font-black text-white">
+                                    {item.value || "-"}
+                                    {item.value ? <span className="text-xs text-white/30">/10</span> : null}
+                                  </p>
+                                </div>
+                                <span
+                                  className={`mt-0.5 rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em] ${
+                                    item.explanation.status === "Strong"
+                                      ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
+                                      : item.explanation.status === "Acceptable"
+                                        ? "border-[#A855F7]/25 bg-[#8B5CF6]/10 text-violet-200"
+                                        : "border-red-400/25 bg-red-400/10 text-red-200"
+                                  }`}
+                                >
+                                  {item.explanation.status}
+                                </span>
+                              </div>
+                            </summary>
+                            <div className="mt-3 border-t border-white/[0.06] pt-3">
+                              <p className="text-xs leading-5 text-white/50">
+                                {item.explanation.whyThisScore}
+                              </p>
+                              <p className="mt-2 text-xs leading-5 text-white/38">
+                                {item.explanation.whatImprovesIt}
+                              </p>
+                            </div>
+                          </details>
                         ))}
                       </div>
+
+                      <details className="mt-3 rounded-2xl border border-[#A855F7]/14 bg-[#8B5CF6]/8 px-4 py-3">
+                        <summary className="cursor-pointer font-mono text-[10px] font-black uppercase tracking-[0.16em] text-violet-200/76">
+                          Why this status?
+                        </summary>
+                        <p className="mt-3 text-xs leading-5 text-white/52">
+                          {statusRationale(status, project)}
+                        </p>
+                      </details>
 
                       <p className="mt-4 font-mono text-[11px] text-white/32">
                         {formatDate(project.createdAt)}

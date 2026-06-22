@@ -66,7 +66,20 @@ type ReviewMetric = {
   label: string;
   score: number;
   status: ReviewMetricStatus;
+  whyThisScore: string;
+  whatImprovesIt: string;
+  missingElements: string[];
+  completedElements: string[];
   improvementNote: string;
+};
+
+type ReviewExplanation = {
+  score: number;
+  status: ReviewMetricStatus;
+  whyThisScore: string;
+  whatImprovesIt: string;
+  missingElements: string[];
+  completedElements: string[];
 };
 
 type ReviewAsset = {
@@ -74,6 +87,9 @@ type ReviewAsset = {
   productReadiness: number;
   buildReadiness: number;
   launchReadiness: number;
+  productReadinessExplanation: ReviewExplanation;
+  buildReadinessExplanation: ReviewExplanation;
+  launchReadinessExplanation: ReviewExplanation;
   summary: string;
 };
 
@@ -221,17 +237,46 @@ function metricStatus(score: number): ReviewMetricStatus {
   return "Weak";
 }
 
-function metric(label: string, score: number, improvementNote: string): ReviewMetric {
+function metric(
+  label: string,
+  score: number,
+  completedElements: string[],
+  missingElements: string[],
+  whatImprovesIt: string
+): ReviewMetric {
+  const status = metricStatus(score);
   return {
     label,
     score,
-    status: metricStatus(score),
-    improvementNote,
+    status,
+    completedElements,
+    missingElements,
+    whyThisScore: `${label} is ${status.toLowerCase()} because ${completedElements.join(", ")} are present, while ${missingElements.join(", ")} still need more evidence.`,
+    whatImprovesIt,
+    improvementNote: whatImprovesIt,
   };
 }
 
 function average(values: number[]) {
   return Math.round(values.reduce((total, value) => total + value, 0) / values.length);
+}
+
+function explanation(
+  score: number,
+  label: string,
+  completedElements: string[],
+  missingElements: string[],
+  whatImprovesIt: string
+): ReviewExplanation {
+  const status = metricStatus(score);
+  return {
+    score,
+    status,
+    completedElements,
+    missingElements,
+    whyThisScore: `${label} is ${score}/10 because ${completedElements.join(", ")} are complete and ${missingElements.join(", ")} remain incomplete.`,
+    whatImprovesIt,
+  };
 }
 
 function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
@@ -243,6 +288,8 @@ function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
         scoreText(assets.strategy.positioning, 6),
         scoreText(assets.strategy.opportunity, 6),
       ]),
+      ["audience", "positioning", "opportunity"],
+      ["measurable success signal", "specific market proof"],
       "Sharpen the target audience and make the opportunity measurable in one sentence."
     ),
     metric(
@@ -252,6 +299,8 @@ function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
         scoreList(assets.offer.deliverables, 6),
         scoreText(assets.offer.guarantee, 5),
       ]),
+      ["offer name", "deliverables", "guarantee"],
+      ["pricing proof", "clear transformation timeline"],
       "Add a more specific transformation, stronger pricing rationale, or risk reversal."
     ),
     metric(
@@ -261,6 +310,8 @@ function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
         scoreText(assets.copy.subheadline, 6),
         scoreText(assets.copy.offerDescription, 6),
       ]),
+      ["headline", "subheadline", "CTA", "offer description"],
+      ["stronger objection handling", "more specific customer language"],
       "Make the headline more outcome-specific and ensure the CTA matches the buyer intent."
     ),
     metric(
@@ -270,6 +321,8 @@ function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
         scoreList(assets.ux.sections, 6),
         scoreText(assets.ux.hierarchy, 6),
       ]),
+      ["page structure", "sections", "hierarchy"],
+      ["edge states", "mobile behavior", "screen-level primary actions"],
       "Add edge states, mobile behavior, and the exact primary action for each screen."
     ),
     metric(
@@ -279,6 +332,8 @@ function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
         scoreText(assets.design.typography, 6),
         scoreText(assets.design.visualDirection, 6),
       ]),
+      ["color palette", "typography", "visual direction"],
+      ["spacing rules", "component states", "interaction details"],
       "Attach concrete spacing, component, and interaction rules to the visual direction."
     ),
     metric(
@@ -288,6 +343,8 @@ function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
         scoreList(assets.build.routeStructure, 6),
         scoreList(assets.build.acceptanceChecklist, 6),
       ]),
+      ["Next.js brief", "route structure", "acceptance checklist"],
+      ["ordered implementation tasks", "data model", "expected files"],
       "Break the build plan into ordered implementation tasks and define expected files."
     ),
     metric(
@@ -297,6 +354,8 @@ function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
         scoreList(assets.publish.socialPosts, 6),
         scoreList(assets.publish.finalLaunchChecklist, 6),
       ]),
+      ["Gumroad listing", "social posts", "final checklist"],
+      ["launch timing", "screenshots", "channel-specific edits"],
       "Add launch timing, screenshots, and final channel-specific edits before publishing."
     ),
   ];
@@ -315,6 +374,27 @@ function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
     productReadiness,
     buildReadiness,
     launchReadiness,
+    productReadinessExplanation: explanation(
+      productReadiness,
+      "Product Readiness",
+      ["strategy", "offer", "copy", "UX", "design direction"],
+      ["validation proof", "edited final copy", "decision-ready product constraints"],
+      "Improve the weakest product metric first, then edit the offer and copy until the promise, buyer, and flow are specific."
+    ),
+    buildReadinessExplanation: explanation(
+      buildReadiness,
+      "Build Readiness",
+      ["app brief", "routes", "component hierarchy", "acceptance checklist"],
+      ["data model", "implementation order", "integration assumptions"],
+      "Add file-level tasks, state/data requirements, and acceptance checks that a builder can execute without interpretation."
+    ),
+    launchReadinessExplanation: explanation(
+      launchReadiness,
+      "Launch Readiness",
+      ["listing draft", "social posts", "email copy", "launch checklist"],
+      ["launch calendar", "proof assets", "channel-specific final pass"],
+      "Add timing, screenshots, proof, and final platform-specific edits before treating this as publish-ready."
+    ),
     summary: `Overall readiness is ${average([productReadiness, buildReadiness, launchReadiness])}/10. Prioritize the lowest-scoring category before exporting final deliverables.`,
   };
 }
@@ -510,6 +590,9 @@ function projectWithAssets(project: LocalProject): LocalProject {
   if (
     project.assets &&
     "review" in project.assets &&
+    "productReadinessExplanation" in project.assets.review &&
+    "buildReadinessExplanation" in project.assets.review &&
+    "launchReadinessExplanation" in project.assets.review &&
     "nextAppBrief" in project.assets.build &&
     "routeStructure" in project.assets.build &&
     "componentHierarchy" in project.assets.build &&
@@ -538,7 +621,21 @@ function projectWithAssets(project: LocalProject): LocalProject {
           ...generated.publish,
           ...project.assets.publish,
         },
-        review: generated.review,
+        review: generateReview({
+          strategy: project.assets.strategy || generated.strategy,
+          offer: project.assets.offer || generated.offer,
+          copy: project.assets.copy || generated.copy,
+          ux: project.assets.ux || generated.ux,
+          design: project.assets.design || generated.design,
+          build: {
+            ...generated.build,
+            ...project.assets.build,
+          },
+          publish: {
+            ...generated.publish,
+            ...project.assets.publish,
+          },
+        }),
       },
     };
   }
@@ -860,6 +957,28 @@ Status: ${project.status}
 - Build Readiness: ${review.buildReadiness}/10
 - Launch Readiness: ${review.launchReadiness}/10
 
+## Readiness explanations
+### Product Readiness
+- Status: ${review.productReadinessExplanation.status}
+- Why this score: ${review.productReadinessExplanation.whyThisScore}
+- What improves it: ${review.productReadinessExplanation.whatImprovesIt}
+- Completed elements: ${review.productReadinessExplanation.completedElements.join(", ")}
+- Missing elements: ${review.productReadinessExplanation.missingElements.join(", ")}
+
+### Build Readiness
+- Status: ${review.buildReadinessExplanation.status}
+- Why this score: ${review.buildReadinessExplanation.whyThisScore}
+- What improves it: ${review.buildReadinessExplanation.whatImprovesIt}
+- Completed elements: ${review.buildReadinessExplanation.completedElements.join(", ")}
+- Missing elements: ${review.buildReadinessExplanation.missingElements.join(", ")}
+
+### Launch Readiness
+- Status: ${review.launchReadinessExplanation.status}
+- Why this score: ${review.launchReadinessExplanation.whyThisScore}
+- What improves it: ${review.launchReadinessExplanation.whatImprovesIt}
+- Completed elements: ${review.launchReadinessExplanation.completedElements.join(", ")}
+- Missing elements: ${review.launchReadinessExplanation.missingElements.join(", ")}
+
 ## Summary
 ${review.summary}
 
@@ -869,7 +988,10 @@ ${review.metrics
     (item) => `### ${item.label}
 - Score: ${item.score}/10
 - Status: ${item.status}
-- Improvement: ${item.improvementNote}`
+- Why this score: ${item.whyThisScore}
+- What improves it: ${item.whatImprovesIt}
+- Completed elements: ${item.completedElements.join(", ")}
+- Missing elements: ${item.missingElements.join(", ")}`
   )
   .join("\n\n")}
 `;
@@ -1294,6 +1416,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
             </div>
           </div>
 
+          {selectedId !== "review" ? (
           <article className="mt-6 overflow-hidden rounded-3xl border border-[#8B5CF6]/18 bg-[#120A20]/78">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <div>
@@ -1355,6 +1478,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               })}
             </div>
           </article>
+          ) : null}
 
           {selectedId === "review" && review ? (
             <article className="mt-4 overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#100719]/88">
@@ -1388,18 +1512,54 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               <div className="grid gap-3 p-5">
                 <section className="grid gap-3 md:grid-cols-3">
                   {[
-                    { label: "Product Readiness", value: review.productReadiness },
-                    { label: "Build Readiness", value: review.buildReadiness },
-                    { label: "Launch Readiness", value: review.launchReadiness },
+                    {
+                      label: "Product Readiness",
+                      value: review.productReadiness,
+                      explanation: review.productReadinessExplanation,
+                    },
+                    {
+                      label: "Build Readiness",
+                      value: review.buildReadiness,
+                      explanation: review.buildReadinessExplanation,
+                    },
+                    {
+                      label: "Launch Readiness",
+                      value: review.launchReadiness,
+                      explanation: review.launchReadinessExplanation,
+                    },
                   ].map((item) => (
                     <div key={item.label} className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
-                      <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-white/36">
-                        {item.label}
-                      </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-white/36">
+                          {item.label}
+                        </p>
+                        <span
+                          className={`rounded-full border px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] ${
+                            item.explanation.status === "Strong"
+                              ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
+                              : item.explanation.status === "Acceptable"
+                                ? "border-[#A855F7]/25 bg-[#8B5CF6]/10 text-violet-200"
+                                : "border-red-400/25 bg-red-400/10 text-red-200"
+                          }`}
+                        >
+                          {item.explanation.status}
+                        </span>
+                      </div>
                       <p className="mt-3 text-4xl font-black tracking-[-0.05em] text-white">
                         {item.value}
                         <span className="text-base text-white/32">/10</span>
                       </p>
+                      <p className="mt-3 text-xs leading-5 text-white/50">
+                        {item.explanation.whyThisScore}
+                      </p>
+                      <div className="mt-3 border-t border-white/[0.06] pt-3">
+                        <p className="font-mono text-[9px] font-black uppercase tracking-[0.16em] text-[#A855F7]/70">
+                          Improves with
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-white/48">
+                          {item.explanation.whatImprovesIt}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </section>
@@ -1417,7 +1577,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-black text-white">{item.label}</p>
-                          <p className="mt-1 text-xs leading-5 text-white/44">{item.improvementNote}</p>
+                          <p className="mt-1 text-xs leading-5 text-white/44">{item.whyThisScore}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <span
@@ -1434,6 +1594,38 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                           <span className="rounded-full border border-white/[0.07] bg-white/[0.035] px-3 py-1 font-mono text-xs font-bold text-white/60">
                             {item.score}/10
                           </span>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-3 border-t border-white/[0.055] pt-4 md:grid-cols-3">
+                        <div>
+                          <p className="font-mono text-[9px] font-black uppercase tracking-[0.16em] text-emerald-300/70">
+                            Completed
+                          </p>
+                          <ul className="mt-2 grid gap-1">
+                            {item.completedElements.map((element) => (
+                              <li key={element} className="text-xs leading-5 text-white/48">
+                                {element}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="font-mono text-[9px] font-black uppercase tracking-[0.16em] text-red-200/70">
+                            Missing
+                          </p>
+                          <ul className="mt-2 grid gap-1">
+                            {item.missingElements.map((element) => (
+                              <li key={element} className="text-xs leading-5 text-white/48">
+                                {element}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="font-mono text-[9px] font-black uppercase tracking-[0.16em] text-[#A855F7]/70">
+                            What improves it
+                          </p>
+                          <p className="mt-2 text-xs leading-5 text-white/48">{item.whatImprovesIt}</p>
                         </div>
                       </div>
                     </div>
