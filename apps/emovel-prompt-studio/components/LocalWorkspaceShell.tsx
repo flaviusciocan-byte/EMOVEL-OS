@@ -250,6 +250,14 @@ function valueToText(value: unknown) {
   return String(value);
 }
 
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "emovel-project";
+}
+
 function sectionMarkdown(section: WorkspaceSection, project: LocalProject) {
   const asset = selectedAsset(project, section.id);
   const fields = Object.entries(asset)
@@ -265,11 +273,191 @@ ${fields}
 `;
 }
 
+const exportSectionIds: (keyof GeneratedAssets)[] = [
+  "strategy",
+  "offer",
+  "copy",
+  "ux",
+  "design",
+  "build",
+  "publish",
+];
+
+function sectionForExport(id: keyof GeneratedAssets) {
+  return workspaceSections.find((section) => section.id === id) || workspaceSections[0];
+}
+
+function exportFiles(project: LocalProject) {
+  const projectName = slugify(project.title);
+  const root = `exports/${projectName}`;
+  const markdownFiles = exportSectionIds.map((sectionId) => ({
+    path: `${root}/${sectionId}.md`,
+    content: sectionMarkdown(sectionForExport(sectionId), project),
+  }));
+
+  const jsonContent = JSON.stringify(
+    {
+      id: project.id,
+      title: project.title,
+      prompt: project.prompt,
+      createdAt: project.createdAt,
+      status: project.status,
+      assets: project.assets,
+    },
+    null,
+    2
+  );
+
+  return [
+    ...markdownFiles,
+    {
+      path: `${root}/project.json`,
+      content: jsonContent,
+    },
+  ];
+}
+
+function combinedMarkdown(project: LocalProject) {
+  return exportSectionIds
+    .map((sectionId) => sectionMarkdown(sectionForExport(sectionId), project))
+    .join("\n---\n\n");
+}
+
+function downloadBlob(filename: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+const crcTable = Array.from({ length: 256 }, (_, index) => {
+  let value = index;
+  for (let bit = 0; bit < 8; bit += 1) {
+    value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+  }
+  return value >>> 0;
+});
+
+function crc32(bytes: Uint8Array) {
+  let crc = 0xffffffff;
+  for (let index = 0; index < bytes.length; index += 1) {
+    const byte = bytes[index];
+    crc = crcTable[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function uint16(value: number) {
+  return [value & 0xff, (value >>> 8) & 0xff];
+}
+
+function uint32(value: number) {
+  return [
+    value & 0xff,
+    (value >>> 8) & 0xff,
+    (value >>> 16) & 0xff,
+    (value >>> 24) & 0xff,
+  ];
+}
+
+function dosDateTime(date: Date) {
+  const time =
+    (date.getHours() << 11) |
+    (date.getMinutes() << 5) |
+    Math.floor(date.getSeconds() / 2);
+  const day =
+    ((date.getFullYear() - 1980) << 9) |
+    ((date.getMonth() + 1) << 5) |
+    date.getDate();
+  return { time, day };
+}
+
+function concatBytes(chunks: Uint8Array[]) {
+  const size = chunks.reduce((total, chunk) => total + chunk.length, 0);
+  const output = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    output.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return output;
+}
+
+function createZip(files: { path: string; content: string }[]) {
+  const encoder = new TextEncoder();
+  const now = dosDateTime(new Date());
+  const localParts: Uint8Array[] = [];
+  const centralParts: Uint8Array[] = [];
+  let offset = 0;
+
+  for (const file of files) {
+    const nameBytes = encoder.encode(file.path);
+    const data = encoder.encode(file.content);
+    const checksum = crc32(data);
+    const localHeader = new Uint8Array([
+      ...uint32(0x04034b50),
+      ...uint16(20),
+      ...uint16(0),
+      ...uint16(0),
+      ...uint16(now.time),
+      ...uint16(now.day),
+      ...uint32(checksum),
+      ...uint32(data.length),
+      ...uint32(data.length),
+      ...uint16(nameBytes.length),
+      ...uint16(0),
+    ]);
+    localParts.push(localHeader, nameBytes, data);
+
+    const centralHeader = new Uint8Array([
+      ...uint32(0x02014b50),
+      ...uint16(20),
+      ...uint16(20),
+      ...uint16(0),
+      ...uint16(0),
+      ...uint16(now.time),
+      ...uint16(now.day),
+      ...uint32(checksum),
+      ...uint32(data.length),
+      ...uint32(data.length),
+      ...uint16(nameBytes.length),
+      ...uint16(0),
+      ...uint16(0),
+      ...uint16(0),
+      ...uint16(0),
+      ...uint32(0),
+      ...uint32(offset),
+    ]);
+    centralParts.push(centralHeader, nameBytes);
+    offset += localHeader.length + nameBytes.length + data.length;
+  }
+
+  const centralDirectory = concatBytes(centralParts);
+  const endRecord = new Uint8Array([
+    ...uint32(0x06054b50),
+    ...uint16(0),
+    ...uint16(0),
+    ...uint16(files.length),
+    ...uint16(files.length),
+    ...uint32(centralDirectory.length),
+    ...uint32(offset),
+    ...uint16(0),
+  ]);
+
+  return concatBytes([...localParts, centralDirectory, endRecord]);
+}
+
 export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   const [project, setProject] = useState<LocalProject | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [selectedId, setSelectedId] = useState<WorkspaceSection["id"]>("overview");
   const [copied, setCopied] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"markdown" | "json" | "zip">("zip");
 
   useEffect(() => {
     const stored = localStorage.getItem(`emovel-project:${id}`);
@@ -300,11 +488,44 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     return selectedAsset(project, selectedSection.id);
   }, [project, selectedSection.id]);
 
+  const currentExportFiles = useMemo(() => {
+    if (!project) return [];
+    return exportFiles(project);
+  }, [project]);
+
   async function copySection() {
     if (!project) return;
     await navigator.clipboard.writeText(sectionMarkdown(selectedSection, project));
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1300);
+  }
+
+  function downloadExport() {
+    if (!project) return;
+    const projectName = slugify(project.title);
+
+    if (exportFormat === "markdown") {
+      downloadBlob(
+        `${projectName}.md`,
+        new Blob([combinedMarkdown(project)], { type: "text/markdown;charset=utf-8" })
+      );
+      return;
+    }
+
+    if (exportFormat === "json") {
+      const projectJson = currentExportFiles.find((file) => file.path.endsWith("/project.json"));
+      downloadBlob(
+        `${projectName}.json`,
+        new Blob([projectJson?.content || "{}"], { type: "application/json;charset=utf-8" })
+      );
+      return;
+    }
+
+    const zipBytes = createZip(currentExportFiles);
+    downloadBlob(
+      `${projectName}-export.zip`,
+      new Blob([zipBytes], { type: "application/zip" })
+    );
   }
 
   if (!loaded) {
@@ -402,6 +623,13 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
             </div>
 
             <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setExportOpen(true)}
+                className="rounded-2xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(139,92,246,0.25)] transition hover:bg-[#A855F7]"
+              >
+                Export
+              </button>
               <button
                 type="button"
                 onClick={copySection}
@@ -508,6 +736,90 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
           </div>
         </aside>
       </section>
+
+      {exportOpen ? (
+        <div className="fixed inset-0 z-[90] flex items-start justify-center px-4 pt-20">
+          <button
+            type="button"
+            aria-label="Close export preview"
+            className="absolute inset-0 cursor-default bg-black/64 backdrop-blur-md"
+            onClick={() => setExportOpen(false)}
+          />
+
+          <section className="relative z-10 grid max-h-[82dvh] w-full max-w-5xl overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#090512]/95 shadow-[0_32px_120px_rgba(0,0,0,0.74),0_0_120px_rgba(139,92,246,0.22)] lg:grid-cols-[320px_minmax(0,1fr)]">
+            <aside className="border-b border-white/[0.07] p-5 lg:border-b-0 lg:border-r">
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#A855F7]">
+                Export current project
+              </p>
+              <h3 className="mt-3 text-2xl font-black tracking-[-0.045em] text-white">
+                Download package
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-white/48">
+                Preview the generated deliverables before exporting. ZIP keeps the full
+                folder structure under exports/{slugify(project.title)}/.
+              </p>
+
+              <div className="mt-6 grid gap-2">
+                {[
+                  { id: "markdown", label: "Markdown", description: "Single combined .md file" },
+                  { id: "json", label: "JSON", description: "Machine-readable project.json" },
+                  { id: "zip", label: "ZIP package", description: "Full export folder with all files" },
+                ].map((option) => {
+                  const active = exportFormat === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setExportFormat(option.id as "markdown" | "json" | "zip")}
+                      className={`rounded-2xl border px-4 py-3 text-left transition ${
+                        active
+                          ? "border-[#A855F7]/34 bg-[#8B5CF6]/16"
+                          : "border-white/[0.07] bg-white/[0.025] hover:bg-white/[0.045]"
+                      }`}
+                    >
+                      <span className="block text-sm font-black text-white">{option.label}</span>
+                      <span className="mt-1 block text-xs text-white/40">{option.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={downloadExport}
+                className="mt-6 w-full rounded-2xl bg-[#8B5CF6] px-5 py-3 text-sm font-black text-white shadow-[0_18px_55px_rgba(139,92,246,0.32)] transition hover:bg-[#A855F7]"
+              >
+                Download {exportFormat === "zip" ? "package" : exportFormat}
+              </button>
+            </aside>
+
+            <div className="min-w-0 overflow-auto p-5">
+              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025]">
+                <div className="border-b border-white/[0.06] px-4 py-3">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-white/34">
+                    Preview
+                  </p>
+                </div>
+                <div className="grid gap-2 p-4">
+                  {currentExportFiles.map((file) => (
+                    <details
+                      key={file.path}
+                      className="rounded-2xl border border-white/[0.055] bg-black/16 p-3"
+                    >
+                      <summary className="cursor-pointer font-mono text-xs font-bold text-white/70">
+                        {file.path}
+                      </summary>
+                      <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-xl bg-black/24 p-3 text-xs leading-5 text-white/48">
+                        {file.content}
+                      </pre>
+                    </details>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
