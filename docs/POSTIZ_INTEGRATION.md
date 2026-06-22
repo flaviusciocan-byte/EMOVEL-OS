@@ -59,8 +59,13 @@ Detected package metadata:
 - engine: `node >=22.12.0 <23.0.0`
 - local Node detected: `v24.16.0`
 - local pnpm detected: `11.3.0`
+- nvm-windows detected: no
 
 Because local Node is outside the repository engine range, source dependencies were not installed. Current status: `NEEDS_MANUAL_SETUP`.
+
+Safe Node setup commands are documented in:
+
+`docs/POSTIZ_NODE_SETUP.md`
 
 Recommended source install after switching to Node 22.x:
 
@@ -162,5 +167,6 @@ Reason:
 
 - Extracted and registered.
 - Source install not run because local Node is `v24.16.0`, while Postiz requires `>=22.12.0 <23.0.0`.
+- `nvm` / nvm-windows was not detected on PATH.
 - Docker compose exists, but containers were not launched per sprint rule.
 - No real accounts or APIs were connected.

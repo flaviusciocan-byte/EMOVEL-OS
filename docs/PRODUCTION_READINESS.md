@@ -21,7 +21,7 @@ EMOVEL-OS is acting as the control center for external production tools. The req
 | Nano Banana 2 AI | REGISTERED | Path and package manifest detected; install deferred |
 | GPT image prompt library | REGISTERED | Path and README detected |
 | Nano Banana Pro | REGISTERED | Path and README detected |
-| Postiz social publishing | NEEDS_MANUAL_SETUP | Extracted and registered; Node engine mismatch prevents source install |
+| Postiz social publishing | NEEDS_MANUAL_SETUP | Extracted and registered; Node engine mismatch prevents source install; nvm-windows not detected |
 | Prompt Studio build | PASS | `npm run build` passes |
 
 ## Deferred Setup
@@ -33,7 +33,7 @@ EMOVEL-OS is acting as the control center for external production tools. The req
 | awesome-gpt-image-2-API-and-Prompts-main | Reference/prompt library, no install needed |
 | Nano-Banana-Pro-main | Reference repo, no install needed |
 | UI UX Pro Max global CLI | Global install not explicitly approved |
-| postiz-app-main | Requires Node `>=22.12.0 <23.0.0` or Docker setup; local Node is `v24.16.0`; no containers launched |
+| postiz-app-main | Requires Node `>=22.12.0 <23.0.0` or Docker setup; local Node is `v24.16.0`; nvm-windows not detected; no containers launched |
 
 ## Production Use Guidance
 
@@ -42,11 +42,13 @@ EMOVEL-OS is acting as the control center for external production tools. The req
 - Use `21st-sdk-main` from its external path when component/agent SDK work is needed.
 - Use UI UX Pro Max as a design intelligence/reference layer unless a future sprint explicitly installs its optional CLI or skill integration.
 - Use Postiz as the reviewed handoff for `SOCIAL_LAUNCH_POSTS.md` after manual setup and account connection.
+- Use `docs/POSTIZ_NODE_SETUP.md` before attempting a source install of Postiz.
 - Do not promote deferred tools to `PRODUCTION_READY` until they are installed, smoke-tested, and tied to a real EMOVEL workflow artifact.
 
 ## Not Performed
 
 - No Docker compose command was run.
+- No global Node version was changed.
 - No social account was connected.
 - No post was published.
 - No Quant UX install was run.
