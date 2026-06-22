@@ -60,6 +60,23 @@ type PublishAsset = {
   distributionChannels: string[];
 };
 
+type ReviewMetricStatus = "Weak" | "Acceptable" | "Strong";
+
+type ReviewMetric = {
+  label: string;
+  score: number;
+  status: ReviewMetricStatus;
+  improvementNote: string;
+};
+
+type ReviewAsset = {
+  metrics: ReviewMetric[];
+  productReadiness: number;
+  buildReadiness: number;
+  launchReadiness: number;
+  summary: string;
+};
+
 type GeneratedAssets = {
   strategy: StrategyAsset;
   offer: OfferAsset;
@@ -68,6 +85,7 @@ type GeneratedAssets = {
   design: DesignAsset;
   build: BuildAsset;
   publish: PublishAsset;
+  review: ReviewAsset;
 };
 
 type LocalProject = {
@@ -99,6 +117,7 @@ const workspaceSections: WorkspaceSection[] = [
   { id: "design", title: "Design", eyebrow: "Visual system", nextAction: "Apply the palette and typography to the primary screen." },
   { id: "build", title: "Build", eyebrow: "Implementation map", nextAction: "Create the pages and component list in the build workspace." },
   { id: "publish", title: "Publish", eyebrow: "Launch plan", nextAction: "Work through the launch checklist before distribution." },
+  { id: "review", title: "Review", eyebrow: "Quality scoring", nextAction: "Improve any Acceptable or Weak asset before export." },
 ];
 
 const assetLabels: Record<string, string> = {
@@ -136,6 +155,11 @@ const assetLabels: Record<string, string> = {
   launchChecklist: "Launch checklist",
   contentPlan: "Content plan",
   distributionChannels: "Distribution channels",
+  metrics: "Quality metrics",
+  productReadiness: "Product Readiness",
+  buildReadiness: "Build Readiness",
+  launchReadiness: "Launch Readiness",
+  summary: "Summary",
 };
 
 function formatDate(value: string) {
@@ -176,6 +200,122 @@ function inferAudience(prompt: string) {
   if (lower.includes("saas")) return "B2B teams validating a new product workflow";
   if (lower.includes("creator") || lower.includes("content")) return "creators who need a repeatable publishing engine";
   return "builders who need polished product assets without a long production cycle";
+}
+
+function clampScore(value: number) {
+  return Math.max(1, Math.min(10, value));
+}
+
+function scoreText(value: string, baseline: number) {
+  return clampScore(baseline + Math.min(3, Math.floor(value.length / 160)));
+}
+
+function scoreList(values: string[], baseline: number) {
+  return clampScore(baseline + Math.min(3, values.length - 2));
+}
+
+function metricStatus(score: number): ReviewMetricStatus {
+  if (score >= 8) return "Strong";
+  if (score >= 6) return "Acceptable";
+  return "Weak";
+}
+
+function metric(label: string, score: number, improvementNote: string): ReviewMetric {
+  return {
+    label,
+    score,
+    status: metricStatus(score),
+    improvementNote,
+  };
+}
+
+function average(values: number[]) {
+  return Math.round(values.reduce((total, value) => total + value, 0) / values.length);
+}
+
+function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
+  const metrics = [
+    metric(
+      "Strategy clarity",
+      average([
+        scoreText(assets.strategy.audience, 6),
+        scoreText(assets.strategy.positioning, 6),
+        scoreText(assets.strategy.opportunity, 6),
+      ]),
+      "Sharpen the target audience and make the opportunity measurable in one sentence."
+    ),
+    metric(
+      "Offer strength",
+      average([
+        scoreText(assets.offer.offerName, 6),
+        scoreList(assets.offer.deliverables, 6),
+        scoreText(assets.offer.guarantee, 5),
+      ]),
+      "Add a more specific transformation, stronger pricing rationale, or risk reversal."
+    ),
+    metric(
+      "Copy quality",
+      average([
+        scoreText(assets.copy.headline, 5),
+        scoreText(assets.copy.subheadline, 6),
+        scoreText(assets.copy.offerDescription, 6),
+      ]),
+      "Make the headline more outcome-specific and ensure the CTA matches the buyer intent."
+    ),
+    metric(
+      "UX completeness",
+      average([
+        scoreList(assets.ux.pageStructure, 6),
+        scoreList(assets.ux.sections, 6),
+        scoreText(assets.ux.hierarchy, 6),
+      ]),
+      "Add edge states, mobile behavior, and the exact primary action for each screen."
+    ),
+    metric(
+      "Design direction",
+      average([
+        scoreList(assets.design.colorPalette, 6),
+        scoreText(assets.design.typography, 6),
+        scoreText(assets.design.visualDirection, 6),
+      ]),
+      "Attach concrete spacing, component, and interaction rules to the visual direction."
+    ),
+    metric(
+      "Build readiness",
+      average([
+        scoreText(assets.build.nextAppBrief, 6),
+        scoreList(assets.build.routeStructure, 6),
+        scoreList(assets.build.acceptanceChecklist, 6),
+      ]),
+      "Break the build plan into ordered implementation tasks and define expected files."
+    ),
+    metric(
+      "Publish readiness",
+      average([
+        scoreText(assets.publish.gumroadListing, 6),
+        scoreList(assets.publish.socialPosts, 6),
+        scoreList(assets.publish.finalLaunchChecklist, 6),
+      ]),
+      "Add launch timing, screenshots, and final channel-specific edits before publishing."
+    ),
+  ];
+  const productReadiness = average([
+    metrics[0].score,
+    metrics[1].score,
+    metrics[2].score,
+    metrics[3].score,
+    metrics[4].score,
+  ]);
+  const buildReadiness = metrics[5].score;
+  const launchReadiness = metrics[6].score;
+
+  return {
+    metrics,
+    productReadiness,
+    buildReadiness,
+    launchReadiness,
+    summary: `Overall readiness is ${average([productReadiness, buildReadiness, launchReadiness])}/10. Prioritize the lowest-scoring category before exporting final deliverables.`,
+  };
 }
 
 function generateAssets(prompt: string, title: string): GeneratedAssets {
@@ -291,7 +431,7 @@ Acceptance:
     "npm.cmd run build passes",
   ];
 
-  return {
+  const assetsWithoutReview: Omit<GeneratedAssets, "review"> = {
     strategy: {
       audience,
       problem: `${sentenceCase(audience)} often have a clear idea but lose momentum turning it into strategy, UX, copy, build direction, and launch material.`,
@@ -358,11 +498,17 @@ Acceptance:
       distributionChannels: ["Product Hunt", "LinkedIn", "X/Twitter", "Founder communities", "Gumroad or Lemon Squeezy listing"],
     },
   };
+
+  return {
+    ...assetsWithoutReview,
+    review: generateReview(assetsWithoutReview),
+  };
 }
 
 function projectWithAssets(project: LocalProject): LocalProject {
   if (
     project.assets &&
+    "review" in project.assets &&
     "nextAppBrief" in project.assets.build &&
     "routeStructure" in project.assets.build &&
     "componentHierarchy" in project.assets.build &&
@@ -391,6 +537,7 @@ function projectWithAssets(project: LocalProject): LocalProject {
           ...generated.publish,
           ...project.assets.publish,
         },
+        review: generated.review,
       },
     };
   }
@@ -585,6 +732,35 @@ function builderPackFiles(project: LocalProject) {
   ];
 }
 
+function reviewReportMarkdown(project: LocalProject) {
+  const review = project.assets?.review;
+  if (!review) return "";
+
+  return `# Quality Review Report
+
+Project: ${project.title}
+Status: ${project.status}
+
+## Overall readiness
+- Product Readiness: ${review.productReadiness}/10
+- Build Readiness: ${review.buildReadiness}/10
+- Launch Readiness: ${review.launchReadiness}/10
+
+## Summary
+${review.summary}
+
+## Metrics
+${review.metrics
+  .map(
+    (item) => `### ${item.label}
+- Score: ${item.score}/10
+- Status: ${item.status}
+- Improvement: ${item.improvementNote}`
+  )
+  .join("\n\n")}
+`;
+}
+
 function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -720,6 +896,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   const [copied, setCopied] = useState(false);
   const [publishCopied, setPublishCopied] = useState<string | null>(null);
   const [buildCopied, setBuildCopied] = useState<string | null>(null);
+  const [reviewCopied, setReviewCopied] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"markdown" | "json" | "zip">("zip");
 
@@ -759,6 +936,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
 
   const publish = project?.assets?.publish;
   const build = project?.assets?.build;
+  const review = project?.assets?.review;
 
   async function copySection() {
     if (!project) return;
@@ -822,6 +1000,21 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     downloadBlob(
       `${slugify(project.title)}-builder-pack.zip`,
       new Blob([zipBytes], { type: "application/zip" })
+    );
+  }
+
+  async function copyReviewReport() {
+    if (!project) return;
+    await navigator.clipboard.writeText(reviewReportMarkdown(project));
+    setReviewCopied(true);
+    window.setTimeout(() => setReviewCopied(false), 1300);
+  }
+
+  function downloadReviewReport() {
+    if (!project) return;
+    downloadBlob(
+      `${slugify(project.title)}-quality-review.md`,
+      new Blob([reviewReportMarkdown(project)], { type: "text/markdown;charset=utf-8" })
     );
   }
 
@@ -984,6 +1177,93 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               ))}
             </div>
           </article>
+
+          {selectedId === "review" && review ? (
+            <article className="mt-4 overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#100719]/88">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
+                <div>
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    Quality review layer
+                  </p>
+                  <h3 className="mt-1 text-lg font-black tracking-[-0.03em] text-white">
+                    Deterministic readiness report
+                  </h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={copyReviewReport}
+                    className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                  >
+                    {reviewCopied ? "Copied" : "Copy review report"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={downloadReviewReport}
+                    className="rounded-2xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(139,92,246,0.26)] transition hover:bg-[#A855F7]"
+                  >
+                    Export review report
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid gap-3 p-5">
+                <section className="grid gap-3 md:grid-cols-3">
+                  {[
+                    { label: "Product Readiness", value: review.productReadiness },
+                    { label: "Build Readiness", value: review.buildReadiness },
+                    { label: "Launch Readiness", value: review.launchReadiness },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                      <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-white/36">
+                        {item.label}
+                      </p>
+                      <p className="mt-3 text-4xl font-black tracking-[-0.05em] text-white">
+                        {item.value}
+                        <span className="text-base text-white/32">/10</span>
+                      </p>
+                    </div>
+                  ))}
+                </section>
+
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    Review summary
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-white/64">{review.summary}</p>
+                </section>
+
+                <section className="grid gap-3">
+                  {review.metrics.map((item) => (
+                    <div key={item.label} className="rounded-2xl border border-white/[0.055] bg-black/16 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black text-white">{item.label}</p>
+                          <p className="mt-1 text-xs leading-5 text-white/44">{item.improvementNote}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`rounded-full border px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] ${
+                              item.status === "Strong"
+                                ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
+                                : item.status === "Acceptable"
+                                  ? "border-[#A855F7]/25 bg-[#8B5CF6]/10 text-violet-200"
+                                  : "border-red-400/25 bg-red-400/10 text-red-200"
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                          <span className="rounded-full border border-white/[0.07] bg-white/[0.035] px-3 py-1 font-mono text-xs font-bold text-white/60">
+                            {item.score}/10
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              </div>
+            </article>
+          ) : null}
 
           {selectedId === "build" && build ? (
             <article className="mt-4 overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#100719]/88">
