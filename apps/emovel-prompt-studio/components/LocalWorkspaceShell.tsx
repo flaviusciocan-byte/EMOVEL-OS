@@ -93,6 +93,7 @@ type LocalProject = {
   title: string;
   prompt: string;
   createdAt: string;
+  lastUpdatedAt?: string;
   status: LocalProjectStatus;
   assets?: GeneratedAssets;
 };
@@ -567,6 +568,116 @@ function valueToText(value: unknown) {
   return String(value);
 }
 
+function editableValueToDraft(value: string | string[]) {
+  if (Array.isArray(value)) return value.join("\n");
+  return value;
+}
+
+function draftToEditableValue(draft: string, previous: string | string[]) {
+  if (!Array.isArray(previous)) return draft.trim();
+  return draft
+    .split("\n")
+    .map((item) => item.trim().replace(/^[-*]\s+/, ""))
+    .filter(Boolean);
+}
+
+function reviewFromAssets(assets: GeneratedAssets): ReviewAsset {
+  return generateReview({
+    strategy: assets.strategy,
+    offer: assets.offer,
+    copy: assets.copy,
+    ux: assets.ux,
+    design: assets.design,
+    build: assets.build,
+    publish: assets.publish,
+  });
+}
+
+function EditableAssetField({
+  label,
+  value,
+  onSave,
+}: {
+  label: string;
+  value: string | string[];
+  onSave: (value: string | string[]) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(editableValueToDraft(value));
+
+  useEffect(() => {
+    if (!editing) setDraft(editableValueToDraft(value));
+  }, [editing, value]);
+
+  function saveDraft() {
+    onSave(draftToEditableValue(draft, value));
+    setEditing(false);
+  }
+
+  function cancelEdit() {
+    setDraft(editableValueToDraft(value));
+    setEditing(false);
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+          {label}
+        </p>
+        <div className="flex gap-2">
+          {editing ? (
+            <>
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-bold text-white/54 transition hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveDraft}
+                className="rounded-xl bg-[#8B5CF6] px-3 py-1.5 text-xs font-black text-white shadow-[0_10px_28px_rgba(139,92,246,0.25)] transition hover:bg-[#A855F7]"
+              >
+                Save
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+            >
+              Edit
+            </button>
+          )}
+        </div>
+      </div>
+
+      {editing ? (
+        <textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          rows={Array.isArray(value) ? Math.max(5, value.length + 1) : 5}
+          className="mt-3 min-h-32 w-full resize-y rounded-2xl border border-[#A855F7]/24 bg-black/24 p-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/24 focus:border-[#A855F7]/60 focus:ring-2 focus:ring-[#8B5CF6]/20"
+        />
+      ) : Array.isArray(value) ? (
+        <ul className="mt-3 grid gap-2">
+          {value.map((item) => (
+            <li key={item} className="flex gap-2 text-sm leading-6 text-white/64">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8B5CF6]" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-white/66">{value}</p>
+      )}
+    </div>
+  );
+}
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -618,6 +729,7 @@ function exportFiles(project: LocalProject) {
       title: project.title,
       prompt: project.prompt,
       createdAt: project.createdAt,
+      lastUpdatedAt: project.lastUpdatedAt,
       status: project.status,
       assets: project.assets,
     },
@@ -671,6 +783,7 @@ function publishPackFiles(project: LocalProject) {
             title: project.title,
             prompt: project.prompt,
             createdAt: project.createdAt,
+            lastUpdatedAt: project.lastUpdatedAt,
             status: project.status,
           },
           publish,
@@ -721,6 +834,7 @@ function builderPackFiles(project: LocalProject) {
             title: project.title,
             prompt: project.prompt,
             createdAt: project.createdAt,
+            lastUpdatedAt: project.lastUpdatedAt,
             status: project.status,
           },
           build,
@@ -938,6 +1052,49 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   const build = project?.assets?.build;
   const review = project?.assets?.review;
 
+  function persistProject(nextProject: LocalProject) {
+    setProject(nextProject);
+    localStorage.setItem(`emovel-project:${nextProject.id}`, JSON.stringify(nextProject));
+
+    const list = localStorage.getItem("emovel-projects");
+    if (list) {
+      const projects = (JSON.parse(list) as LocalProject[]).map((item) =>
+        item.id === nextProject.id ? nextProject : item
+      );
+      localStorage.setItem("emovel-projects", JSON.stringify(projects));
+    }
+  }
+
+  function saveAssetField(key: string, value: string | string[]) {
+    if (!project?.assets) return;
+    if (
+      selectedSection.id === "overview" ||
+      selectedSection.id === "review"
+    ) {
+      return;
+    }
+
+    const sectionId = selectedSection.id as keyof Omit<GeneratedAssets, "review">;
+    const nextAssets = {
+      ...project.assets,
+      [sectionId]: {
+        ...project.assets[sectionId],
+        [key]: value,
+      },
+    } as GeneratedAssets;
+
+    const nextProject: LocalProject = {
+      ...project,
+      lastUpdatedAt: new Date().toISOString(),
+      assets: {
+        ...nextAssets,
+        review: reviewFromAssets(nextAssets),
+      },
+    };
+
+    persistProject(nextProject);
+  }
+
   async function copySection() {
     if (!project) return;
     await navigator.clipboard.writeText(sectionMarkdown(selectedSection, project));
@@ -1153,28 +1310,49 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
             </div>
 
             <div className="grid gap-3 p-5">
-              {Object.entries(currentAsset).map(([key, value]) => (
-                <div
-                  key={key}
-                  className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4"
-                >
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
-                    {assetLabels[key] || key}
-                  </p>
-                  {Array.isArray(value) ? (
-                    <ul className="mt-3 grid gap-2">
-                      {value.map((item) => (
-                        <li key={item} className="flex gap-2 text-sm leading-6 text-white/64">
-                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8B5CF6]" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-3 text-sm leading-7 text-white/66">{String(value)}</p>
-                  )}
-                </div>
-              ))}
+              {Object.entries(currentAsset).map(([key, value]) => {
+                const editable =
+                  selectedSection.id !== "overview" &&
+                  selectedSection.id !== "review" &&
+                  (typeof value === "string" ||
+                    (Array.isArray(value) && value.every((item) => typeof item === "string")));
+
+                if (editable) {
+                  return (
+                    <EditableAssetField
+                      key={key}
+                      label={assetLabels[key] || key}
+                      value={value as string | string[]}
+                      onSave={(nextValue) => saveAssetField(key, nextValue)}
+                    />
+                  );
+                }
+
+                return (
+                  <div
+                    key={key}
+                    className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4"
+                  >
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                      {assetLabels[key] || key}
+                    </p>
+                    {Array.isArray(value) ? (
+                      <ul className="mt-3 grid gap-2">
+                        {value.map((item) => (
+                          <li key={String(item)} className="flex gap-2 text-sm leading-6 text-white/64">
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8B5CF6]" />
+                            <span>{String(item)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-white/66">
+                        {String(value)}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </article>
 
@@ -1500,6 +1678,15 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 Created
               </p>
               <p className="mt-2 text-sm font-semibold text-white/72">{formatDate(project.createdAt)}</p>
+            </div>
+
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/32">
+                Last updated
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white/72">
+                {formatDate(project.lastUpdatedAt || project.createdAt)}
+              </p>
             </div>
 
             <div>
