@@ -45,6 +45,10 @@ type BuildAsset = {
 };
 
 type PublishAsset = {
+  gumroadListing: string;
+  socialPosts: string[];
+  emailLaunchCopy: string;
+  finalLaunchChecklist: string[];
   launchChecklist: string[];
   contentPlan: string[];
   distributionChannels: string[];
@@ -113,6 +117,10 @@ const assetLabels: Record<string, string> = {
   stack: "Stack",
   pages: "Pages",
   components: "Components",
+  gumroadListing: "Gumroad listing",
+  socialPosts: "7 social posts",
+  emailLaunchCopy: "Email launch copy",
+  finalLaunchChecklist: "Final launch checklist",
   launchChecklist: "Launch checklist",
   contentPlan: "Content plan",
   distributionChannels: "Distribution channels",
@@ -163,6 +171,59 @@ function generateAssets(prompt: string, title: string): GeneratedAssets {
   const market = inferMarket(prompt);
   const audience = inferAudience(prompt);
   const offerName = `${title.replace(/\.$/, "")} Launch System`;
+  const gumroadListing = `# ${offerName}
+
+Turn "${concept}" into a complete launch workspace.
+
+This package gives ${audience} a ready-to-use product command center with strategy, offer, copy, UX, design, build, and publish assets generated locally from one prompt.
+
+What's included:
+- Strategy, positioning, and opportunity map
+- Offer package with pricing and guarantee
+- Landing copy, UX hierarchy, and visual direction
+- Build plan and publish-ready launch assets
+
+Best for: ${audience}.
+
+CTA: Get the launch workspace`;
+  const socialPosts = [
+    `I built a launch workspace for ${concept}. One prompt now becomes strategy, copy, UX, design, build, and publish assets.`,
+    `Most ideas stall between "interesting" and "shipped." ${offerName} turns the messy middle into a structured launch system.`,
+    `New workflow: write the outcome, open the workspace, review Strategy to Publish, then export the pack. No API calls required.`,
+    `The best product tools reduce decisions. This one gives ${audience} the next asset, the next action, and the launch checklist.`,
+    `Behind the scenes: ${market} positioning, offer architecture, landing copy, UX structure, visual direction, build map, publish plan.`,
+    `If you have a prompt but not a launch plan, this workspace turns it into something you can actually ship.`,
+    `Launching soon: ${offerName}. Built for ${audience} who want polished product assets without a long production cycle.`,
+  ];
+  const emailLaunchCopy = `Subject: ${offerName} is ready
+
+Hey,
+
+I just finished a local-first launch workspace for ${concept}.
+
+It turns one prompt into the assets you normally have to assemble across separate docs: strategy, offer, copy, UX, design direction, build plan, and publish prep.
+
+The goal is simple: help ${audience} move from idea to launch-ready package faster, without waiting on manual planning cycles.
+
+Inside you get:
+- A strategic positioning brief
+- A packaged offer with pricing and guarantee
+- Landing page copy and UX hierarchy
+- Design and build direction
+- Gumroad, social, email, and checklist assets
+
+Open the workspace, review each section, export the publish pack, and ship.
+
+CTA: Get the launch workspace`;
+  const finalLaunchChecklist = [
+    "Confirm Gumroad title, price, and offer promise",
+    "Paste the Gumroad listing into the product page",
+    "Schedule or publish the 7 social posts",
+    "Send the email launch copy to the warm list",
+    "Verify checkout link, preview image, and support contact",
+    "Export and archive the publish pack",
+    "Do a final mobile and desktop QA pass before posting publicly",
+  ];
 
   return {
     strategy: {
@@ -207,6 +268,10 @@ function generateAssets(prompt: string, title: string): GeneratedAssets {
       components: ["Home prompt composer", "LocalWorkspaceShell", "Section sidebar", "Asset preview card", "Project inspector", "Copy action"],
     },
     publish: {
+      gumroadListing,
+      socialPosts,
+      emailLaunchCopy,
+      finalLaunchChecklist,
       launchChecklist: [
         "Confirm headline, offer name, and CTA",
         "Review UX hierarchy on desktop and mobile",
@@ -224,7 +289,30 @@ function generateAssets(prompt: string, title: string): GeneratedAssets {
 }
 
 function projectWithAssets(project: LocalProject): LocalProject {
-  if (project.assets) return project;
+  if (
+    project.assets &&
+    "gumroadListing" in project.assets.publish &&
+    "socialPosts" in project.assets.publish &&
+    "emailLaunchCopy" in project.assets.publish &&
+    "finalLaunchChecklist" in project.assets.publish
+  ) {
+    return project;
+  }
+
+  if (project.assets) {
+    const generated = generateAssets(project.prompt, project.title);
+    return {
+      ...project,
+      assets: {
+        ...project.assets,
+        publish: {
+          ...generated.publish,
+          ...project.assets.publish,
+        },
+      },
+    };
+  }
+
   return {
     ...project,
     assets: generateAssets(project.prompt, project.title),
@@ -321,6 +409,48 @@ function combinedMarkdown(project: LocalProject) {
   return exportSectionIds
     .map((sectionId) => sectionMarkdown(sectionForExport(sectionId), project))
     .join("\n---\n\n");
+}
+
+function publishPackFiles(project: LocalProject) {
+  const root = `exports/${slugify(project.title)}/publish-pack`;
+  const publish = project.assets?.publish;
+  if (!publish) return [];
+
+  return [
+    {
+      path: `${root}/gumroad-listing.md`,
+      content: publish.gumroadListing,
+    },
+    {
+      path: `${root}/social-posts.md`,
+      content: publish.socialPosts.map((post, index) => `## Post ${index + 1}\n${post}`).join("\n\n"),
+    },
+    {
+      path: `${root}/email-launch-copy.md`,
+      content: publish.emailLaunchCopy,
+    },
+    {
+      path: `${root}/final-launch-checklist.md`,
+      content: publish.finalLaunchChecklist.map((item) => `- [ ] ${item}`).join("\n"),
+    },
+    {
+      path: `${root}/publish-pack.json`,
+      content: JSON.stringify(
+        {
+          project: {
+            id: project.id,
+            title: project.title,
+            prompt: project.prompt,
+            createdAt: project.createdAt,
+            status: project.status,
+          },
+          publish,
+        },
+        null,
+        2
+      ),
+    },
+  ];
 }
 
 function downloadBlob(filename: string, blob: Blob) {
@@ -456,6 +586,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   const [loaded, setLoaded] = useState(false);
   const [selectedId, setSelectedId] = useState<WorkspaceSection["id"]>("overview");
   const [copied, setCopied] = useState(false);
+  const [publishCopied, setPublishCopied] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"markdown" | "json" | "zip">("zip");
 
@@ -493,11 +624,19 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     return exportFiles(project);
   }, [project]);
 
+  const publish = project?.assets?.publish;
+
   async function copySection() {
     if (!project) return;
     await navigator.clipboard.writeText(sectionMarkdown(selectedSection, project));
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1300);
+  }
+
+  async function copyPublishAsset(label: string, value: string) {
+    await navigator.clipboard.writeText(value);
+    setPublishCopied(label);
+    window.setTimeout(() => setPublishCopied(null), 1300);
   }
 
   function downloadExport() {
@@ -524,6 +663,15 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     const zipBytes = createZip(currentExportFiles);
     downloadBlob(
       `${projectName}-export.zip`,
+      new Blob([zipBytes], { type: "application/zip" })
+    );
+  }
+
+  function downloadPublishPack() {
+    if (!project) return;
+    const zipBytes = createZip(publishPackFiles(project));
+    downloadBlob(
+      `${slugify(project.title)}-publish-pack.zip`,
       new Blob([zipBytes], { type: "application/zip" })
     );
   }
@@ -687,6 +835,106 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               ))}
             </div>
           </article>
+
+          {selectedId === "publish" && publish ? (
+            <article className="mt-4 overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#100719]/88">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
+                <div>
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    Publish prep layer
+                  </p>
+                  <h3 className="mt-1 text-lg font-black tracking-[-0.03em] text-white">
+                    Actionable launch assets
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={downloadPublishPack}
+                  className="rounded-2xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(139,92,246,0.26)] transition hover:bg-[#A855F7]"
+                >
+                  Export publish pack
+                </button>
+              </div>
+
+              <div className="grid gap-3 p-5">
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                      Gumroad listing
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => copyPublishAsset("gumroad", publish.gumroadListing)}
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                    >
+                      {publishCopied === "gumroad" ? "Copied" : "Copy Gumroad listing"}
+                    </button>
+                  </div>
+                  <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded-xl bg-black/20 p-3 text-xs leading-5 text-white/54">
+                    {publish.gumroadListing}
+                  </pre>
+                </section>
+
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                      7 social posts
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => copyPublishAsset("social", publish.socialPosts.join("\n\n"))}
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                    >
+                      {publishCopied === "social" ? "Copied" : "Copy social posts"}
+                    </button>
+                  </div>
+                  <div className="mt-3 grid gap-2">
+                    {publish.socialPosts.map((post, index) => (
+                      <p
+                        key={post}
+                        className="rounded-xl border border-white/[0.045] bg-black/16 p-3 text-xs leading-5 text-white/56"
+                      >
+                        <span className="font-mono text-[#A855F7]">Post {index + 1}: </span>
+                        {post}
+                      </p>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                      Email launch copy
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => copyPublishAsset("email", publish.emailLaunchCopy)}
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                    >
+                      {publishCopied === "email" ? "Copied" : "Copy email"}
+                    </button>
+                  </div>
+                  <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded-xl bg-black/20 p-3 text-xs leading-5 text-white/54">
+                    {publish.emailLaunchCopy}
+                  </pre>
+                </section>
+
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    Final launch checklist
+                  </p>
+                  <ul className="mt-3 grid gap-2">
+                    {publish.finalLaunchChecklist.map((item) => (
+                      <li key={item} className="flex gap-2 text-sm leading-6 text-white/62">
+                        <span className="mt-1.5 h-4 w-4 shrink-0 rounded border border-[#8B5CF6]/35 bg-[#8B5CF6]/10" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              </div>
+            </article>
+          ) : null}
         </section>
 
         <aside className="rounded-3xl border border-white/[0.075] bg-white/[0.035] p-5 backdrop-blur-2xl lg:sticky lg:top-24 lg:h-[calc(100dvh-120px)]">
