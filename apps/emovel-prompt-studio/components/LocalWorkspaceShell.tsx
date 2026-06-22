@@ -39,6 +39,12 @@ type DesignAsset = {
 };
 
 type BuildAsset = {
+  nextAppBrief: string;
+  routeStructure: string[];
+  componentHierarchy: string[];
+  tailwindDesignRules: string[];
+  gptPilotPrompt: string;
+  acceptanceChecklist: string[];
   stack: string[];
   pages: string[];
   components: string[];
@@ -114,6 +120,12 @@ const assetLabels: Record<string, string> = {
   colorPalette: "Color palette",
   typography: "Typography",
   visualDirection: "Visual direction",
+  nextAppBrief: "Next.js app brief",
+  routeStructure: "Route structure",
+  componentHierarchy: "Component hierarchy",
+  tailwindDesignRules: "Tailwind design rules",
+  gptPilotPrompt: "GPT-Pilot prompt",
+  acceptanceChecklist: "Acceptance checklist",
   stack: "Stack",
   pages: "Pages",
   components: "Components",
@@ -224,6 +236,60 @@ CTA: Get the launch workspace`;
     "Export and archive the publish pack",
     "Do a final mobile and desktop QA pass before posting publicly",
   ];
+  const nextAppBrief = `Build a premium Next.js application for ${concept}.
+
+The app should feel like a dark luxury AI command interface for ${audience}. The primary user journey is: land on the homepage, write a prompt, generate a local workspace, review structured assets, then export builder and publish packs.
+
+Do not add backend services or API calls. Keep all generated project data in browser localStorage.`;
+  const routeStructure = [
+    "/ - premium prompt composer and project creation entry point",
+    "/projects - local project library with duplicate/delete/open actions",
+    "/workspace/[id] - core workspace with Strategy, Offer, Copy, UX, Design, Build, Publish sections",
+    "/shop - future publish package surface",
+    "/settings - local configuration overview",
+  ];
+  const componentHierarchy = [
+    "RootLayout -> NavBar -> CommandCenter",
+    "HomePage -> PromptComposer -> local project creator",
+    "WorkspacePage -> LocalWorkspaceShell -> Sidebar, AssetPanel, Inspector, ExportModal",
+    "ProjectsPage -> ProjectCard list with localStorage actions",
+    "LocalWorkspaceShell -> BuildPrepPanel and PublishPrepPanel",
+  ];
+  const tailwindDesignRules = [
+    "Use #05020A as the page background and avoid white surfaces",
+    "Use #8B5CF6 for primary actions and #A855F7 for glow accents",
+    "Prefer rounded-2xl/rounded-3xl glass panels with thin white or violet borders",
+    "Use compact uppercase mono labels for metadata",
+    "Keep layouts sparse, command-like, and focused on one selected asset",
+  ];
+  const gptPilotPrompt = `You are building the EMOVEL Prompt Studio app.
+
+Project goal:
+${nextAppBrief}
+
+Core routes:
+${routeStructure.map((item) => `- ${item}`).join("\n")}
+
+Component hierarchy:
+${componentHierarchy.map((item) => `- ${item}`).join("\n")}
+
+Design rules:
+${tailwindDesignRules.map((item) => `- ${item}`).join("\n")}
+
+Acceptance:
+- No backend, shell execution, AI APIs, or external dependencies are required for this sprint.
+- The workspace must generate deterministic local assets from the prompt.
+- The Build section must expose builder instructions and export a builder pack.
+- The UI must stay dark, premium, minimal, and violet-accented.`;
+  const acceptanceChecklist = [
+    "Home creates a local project object and routes to /workspace/[id]",
+    "Workspace Build section displays app brief, route structure, component hierarchy, Tailwind rules, GPT-Pilot prompt, and checklist",
+    "Copy GPT-Pilot prompt works from the Build tab",
+    "Copy build brief works from the Build tab",
+    "Export builder pack downloads a ZIP without backend calls",
+    "No shell commands are executed from the UI",
+    "npm.cmd run build passes",
+  ];
 
   return {
     strategy: {
@@ -263,6 +329,12 @@ CTA: Get the launch workspace`;
       visualDirection: "Dark luxury AI OS with Linear clarity, Vercel spacing discipline, Raycast command density, glass borders, and cinematic violet spotlighting.",
     },
     build: {
+      nextAppBrief,
+      routeStructure,
+      componentHierarchy,
+      tailwindDesignRules,
+      gptPilotPrompt,
+      acceptanceChecklist,
       stack: ["Next.js App Router", "React client components", "Tailwind CSS", "localStorage persistence", "deterministic TypeScript asset generation"],
       pages: ["/", "/workspace/[id]", "/projects", "/new-project"],
       components: ["Home prompt composer", "LocalWorkspaceShell", "Section sidebar", "Asset preview card", "Project inspector", "Copy action"],
@@ -291,6 +363,12 @@ CTA: Get the launch workspace`;
 function projectWithAssets(project: LocalProject): LocalProject {
   if (
     project.assets &&
+    "nextAppBrief" in project.assets.build &&
+    "routeStructure" in project.assets.build &&
+    "componentHierarchy" in project.assets.build &&
+    "tailwindDesignRules" in project.assets.build &&
+    "gptPilotPrompt" in project.assets.build &&
+    "acceptanceChecklist" in project.assets.build &&
     "gumroadListing" in project.assets.publish &&
     "socialPosts" in project.assets.publish &&
     "emailLaunchCopy" in project.assets.publish &&
@@ -305,6 +383,10 @@ function projectWithAssets(project: LocalProject): LocalProject {
       ...project,
       assets: {
         ...project.assets,
+        build: {
+          ...generated.build,
+          ...project.assets.build,
+        },
         publish: {
           ...generated.publish,
           ...project.assets.publish,
@@ -453,6 +535,56 @@ function publishPackFiles(project: LocalProject) {
   ];
 }
 
+function builderPackFiles(project: LocalProject) {
+  const root = `exports/${slugify(project.title)}/builder-pack`;
+  const build = project.assets?.build;
+  if (!build) return [];
+
+  return [
+    {
+      path: `${root}/next-app-brief.md`,
+      content: build.nextAppBrief,
+    },
+    {
+      path: `${root}/route-structure.md`,
+      content: build.routeStructure.map((item) => `- ${item}`).join("\n"),
+    },
+    {
+      path: `${root}/component-hierarchy.md`,
+      content: build.componentHierarchy.map((item) => `- ${item}`).join("\n"),
+    },
+    {
+      path: `${root}/tailwind-design-rules.md`,
+      content: build.tailwindDesignRules.map((item) => `- ${item}`).join("\n"),
+    },
+    {
+      path: `${root}/gpt-pilot-prompt.md`,
+      content: build.gptPilotPrompt,
+    },
+    {
+      path: `${root}/acceptance-checklist.md`,
+      content: build.acceptanceChecklist.map((item) => `- [ ] ${item}`).join("\n"),
+    },
+    {
+      path: `${root}/builder-pack.json`,
+      content: JSON.stringify(
+        {
+          project: {
+            id: project.id,
+            title: project.title,
+            prompt: project.prompt,
+            createdAt: project.createdAt,
+            status: project.status,
+          },
+          build,
+        },
+        null,
+        2
+      ),
+    },
+  ];
+}
+
 function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -587,6 +719,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   const [selectedId, setSelectedId] = useState<WorkspaceSection["id"]>("overview");
   const [copied, setCopied] = useState(false);
   const [publishCopied, setPublishCopied] = useState<string | null>(null);
+  const [buildCopied, setBuildCopied] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"markdown" | "json" | "zip">("zip");
 
@@ -625,6 +758,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   }, [project]);
 
   const publish = project?.assets?.publish;
+  const build = project?.assets?.build;
 
   async function copySection() {
     if (!project) return;
@@ -637,6 +771,12 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     await navigator.clipboard.writeText(value);
     setPublishCopied(label);
     window.setTimeout(() => setPublishCopied(null), 1300);
+  }
+
+  async function copyBuildAsset(label: string, value: string) {
+    await navigator.clipboard.writeText(value);
+    setBuildCopied(label);
+    window.setTimeout(() => setBuildCopied(null), 1300);
   }
 
   function downloadExport() {
@@ -672,6 +812,15 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     const zipBytes = createZip(publishPackFiles(project));
     downloadBlob(
       `${slugify(project.title)}-publish-pack.zip`,
+      new Blob([zipBytes], { type: "application/zip" })
+    );
+  }
+
+  function downloadBuilderPack() {
+    if (!project) return;
+    const zipBytes = createZip(builderPackFiles(project));
+    downloadBlob(
+      `${slugify(project.title)}-builder-pack.zip`,
       new Blob([zipBytes], { type: "application/zip" })
     );
   }
@@ -835,6 +984,120 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               ))}
             </div>
           </article>
+
+          {selectedId === "build" && build ? (
+            <article className="mt-4 overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#100719]/88">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
+                <div>
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    Builder prep layer
+                  </p>
+                  <h3 className="mt-1 text-lg font-black tracking-[-0.03em] text-white">
+                    Actionable builder instructions
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={downloadBuilderPack}
+                  className="rounded-2xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(139,92,246,0.26)] transition hover:bg-[#A855F7]"
+                >
+                  Export builder pack
+                </button>
+              </div>
+
+              <div className="grid gap-3 p-5">
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                      Next.js app brief
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => copyBuildAsset("brief", build.nextAppBrief)}
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                    >
+                      {buildCopied === "brief" ? "Copied" : "Copy build brief"}
+                    </button>
+                  </div>
+                  <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded-xl bg-black/20 p-3 text-xs leading-5 text-white/54">
+                    {build.nextAppBrief}
+                  </pre>
+                </section>
+
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    Route structure
+                  </p>
+                  <ul className="mt-3 grid gap-2">
+                    {build.routeStructure.map((route) => (
+                      <li key={route} className="rounded-xl border border-white/[0.045] bg-black/16 p-3 text-xs leading-5 text-white/56">
+                        {route}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    Component hierarchy
+                  </p>
+                  <ul className="mt-3 grid gap-2">
+                    {build.componentHierarchy.map((component) => (
+                      <li key={component} className="rounded-xl border border-white/[0.045] bg-black/16 p-3 text-xs leading-5 text-white/56">
+                        {component}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    Tailwind design rules
+                  </p>
+                  <ul className="mt-3 grid gap-2">
+                    {build.tailwindDesignRules.map((rule) => (
+                      <li key={rule} className="flex gap-2 text-sm leading-6 text-white/62">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8B5CF6]" />
+                        <span>{rule}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                      GPT-Pilot prompt
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => copyBuildAsset("gpt-pilot", build.gptPilotPrompt)}
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                    >
+                      {buildCopied === "gpt-pilot" ? "Copied" : "Copy GPT-Pilot prompt"}
+                    </button>
+                  </div>
+                  <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-black/20 p-3 text-xs leading-5 text-white/54">
+                    {build.gptPilotPrompt}
+                  </pre>
+                </section>
+
+                <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    Acceptance checklist
+                  </p>
+                  <ul className="mt-3 grid gap-2">
+                    {build.acceptanceChecklist.map((item) => (
+                      <li key={item} className="flex gap-2 text-sm leading-6 text-white/62">
+                        <span className="mt-1.5 h-4 w-4 shrink-0 rounded border border-[#8B5CF6]/35 bg-[#8B5CF6]/10" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              </div>
+            </article>
+          ) : null}
 
           {selectedId === "publish" && publish ? (
             <article className="mt-4 overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#100719]/88">
