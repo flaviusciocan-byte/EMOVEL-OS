@@ -18,6 +18,8 @@ import {
 type GeneratedAssets = ProjectAssets;
 type LocalProject = ProjectSchemaV1;
 type ProjectBrief = RefinedBrief;
+type ActionNoticeTone = "success" | "error" | "info";
+type RegenerateStatus = "idle" | "running" | "done" | "failed";
 
 type WorkspaceSection = {
   id: "overview" | keyof GeneratedAssets;
@@ -794,6 +796,42 @@ function exportFiles(project: LocalProject) {
   ];
 }
 
+function selectedSectionExportFiles(project: LocalProject, section: WorkspaceSection) {
+  const projectName = slugify(project.title);
+  const root = `exports/${projectName}`;
+  const fileName = section.id === "overview" ? "overview" : section.id;
+  const markdown =
+    section.id === "review" ? reviewReportMarkdown(project) : sectionMarkdown(section, project);
+  const jsonContent = JSON.stringify(
+    {
+      id: project.id,
+      schemaVersion: project.schemaVersion,
+      title: project.title,
+      prompt: project.prompt,
+      refinedBrief: project.refinedBrief,
+      createdAt: project.createdAt,
+      lastUpdatedAt: project.lastUpdatedAt,
+      status: project.status,
+      pipeline: project.pipeline,
+      selectedSection: section.id,
+      asset: selectedAsset(project, section.id),
+    },
+    null,
+    2
+  );
+
+  return [
+    {
+      path: `${root}/${fileName}.md`,
+      content: markdown,
+    },
+    {
+      path: `${root}/${fileName}.json`,
+      content: jsonContent,
+    },
+  ];
+}
+
 function combinedMarkdown(project: LocalProject) {
   return exportSectionIds
     .map((sectionId) => sectionMarkdown(sectionForExport(sectionId), project))
@@ -1098,6 +1136,11 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   const [reviewCopied, setReviewCopied] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"markdown" | "json" | "zip">("zip");
+  const [actionNotice, setActionNotice] = useState<{
+    tone: ActionNoticeTone;
+    message: string;
+  } | null>(null);
+  const [regenerateStatus, setRegenerateStatus] = useState<RegenerateStatus>("idle");
 
   useEffect(() => {
     const stored = localStorage.getItem(`emovel-project:${id}`);
@@ -1128,6 +1171,11 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     [selectedId]
   );
 
+  useEffect(() => {
+    setRegenerateStatus("idle");
+    setActionNotice(null);
+  }, [selectedId]);
+
   const currentAsset = useMemo(() => {
     if (!project) return {};
     return selectedAsset(project, selectedSection.id);
@@ -1135,12 +1183,38 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
 
   const currentExportFiles = useMemo(() => {
     if (!project) return [];
-    return exportFiles(project);
-  }, [project]);
+    return selectedSectionExportFiles(project, selectedSection);
+  }, [project, selectedSection]);
 
   const publish = project?.assets?.publish;
   const build = project?.assets?.build;
   const review = project?.assets?.review;
+
+  function showActionNotice(message: string, tone: ActionNoticeTone = "success") {
+    setActionNotice({ message, tone });
+    window.setTimeout(() => setActionNotice(null), 2200);
+  }
+
+  async function writeClipboard(value: string) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+
+    if (!copied) {
+      throw new Error("Clipboard copy failed.");
+    }
+  }
 
   function persistProject(nextProject: LocalProject) {
     setProject(nextProject);
@@ -1206,55 +1280,160 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
 
   async function copySection() {
     if (!project) return;
-    await navigator.clipboard.writeText(sectionMarkdown(selectedSection, project));
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1300);
+    try {
+      await writeClipboard(
+        selectedSection.id === "review"
+          ? reviewReportMarkdown(project)
+          : sectionMarkdown(selectedSection, project)
+      );
+      setCopied(true);
+      showActionNotice(`${selectedSection.title} copied to clipboard.`);
+      window.setTimeout(() => setCopied(false), 1300);
+    } catch {
+      showActionNotice("Copy failed. Clipboard permission may be blocked.", "error");
+    }
   }
 
   async function copyPublishAsset(label: string, value: string) {
-    await navigator.clipboard.writeText(value);
-    setPublishCopied(label);
-    window.setTimeout(() => setPublishCopied(null), 1300);
+    try {
+      await writeClipboard(value);
+      setPublishCopied(label);
+      showActionNotice("Publish asset copied.");
+      window.setTimeout(() => setPublishCopied(null), 1300);
+    } catch {
+      showActionNotice("Copy failed. Clipboard permission may be blocked.", "error");
+    }
   }
 
   async function copyBuildAsset(label: string, value: string) {
-    await navigator.clipboard.writeText(value);
-    setBuildCopied(label);
-    window.setTimeout(() => setBuildCopied(null), 1300);
+    try {
+      await writeClipboard(value);
+      setBuildCopied(label);
+      showActionNotice("Build asset copied.");
+      window.setTimeout(() => setBuildCopied(null), 1300);
+    } catch {
+      showActionNotice("Copy failed. Clipboard permission may be blocked.", "error");
+    }
+  }
+
+  async function regenerateSection() {
+    if (!project?.assets) return;
+
+    setRegenerateStatus("running");
+    showActionNotice(`Regenerating ${selectedSection.title}...`, "info");
+
+    try {
+      const generated = generateAssets(project.prompt, project.title, project.refinedBrief);
+      let nextAssets: GeneratedAssets = project.assets;
+      let mode = "deterministic fallback";
+
+      if (selectedSection.id === "overview") {
+        nextAssets = generated;
+      } else if (selectedSection.id === "review") {
+        nextAssets = {
+          ...project.assets,
+          review: reviewFromAssets(project.assets),
+        };
+      } else if (selectedSection.id === "strategy") {
+        let strategy = generated.strategy;
+
+        try {
+          const response = await fetch("/api/ai/generate", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              assetType: "strategy",
+              prompt: project.prompt,
+              refinedBrief: project.refinedBrief,
+            }),
+          });
+          const payload = (await response.json()) as {
+            mode?: "ai" | "fallback";
+            fallback?: boolean;
+            asset?: GeneratedAssets["strategy"];
+          };
+
+          if (payload.asset) {
+            strategy = payload.asset;
+            mode = payload.mode === "ai" && !payload.fallback ? "AI Mode" : "deterministic fallback";
+          }
+        } catch {
+          mode = "deterministic fallback";
+        }
+
+        const assetsWithStrategy = {
+          ...project.assets,
+          strategy,
+        };
+        nextAssets = {
+          ...assetsWithStrategy,
+          review: reviewFromAssets(assetsWithStrategy),
+        };
+      } else {
+        const sectionId = selectedSection.id as keyof Omit<GeneratedAssets, "review">;
+        const assetsWithSection = {
+          ...project.assets,
+          [sectionId]: generated[sectionId],
+        } as GeneratedAssets;
+        nextAssets = {
+          ...assetsWithSection,
+          review: reviewFromAssets(assetsWithSection),
+        };
+      }
+
+      persistProject({
+        ...project,
+        lastUpdatedAt: new Date().toISOString(),
+        assets: nextAssets,
+      });
+      setRegenerateStatus("done");
+      showActionNotice(`${selectedSection.title} regenerated with ${mode}.`);
+      window.setTimeout(() => setRegenerateStatus("idle"), 1600);
+    } catch {
+      setRegenerateStatus("failed");
+      showActionNotice(`Failed to regenerate ${selectedSection.title}.`, "error");
+    }
   }
 
   function downloadExport() {
     if (!project) return;
     const projectName = slugify(project.title);
+    const sectionSlug = slugify(selectedSection.title);
 
     if (exportFormat === "markdown") {
-      const filename = `${projectName}.md`;
+      const filename = `${projectName}-${sectionSlug}.md`;
+      const markdownFile = currentExportFiles.find((file) => file.path.endsWith(".md"));
       recordExport("markdown", filename);
       downloadBlob(
         filename,
-        new Blob([combinedMarkdown(project)], { type: "text/markdown;charset=utf-8" })
+        new Blob([markdownFile?.content || sectionMarkdown(selectedSection, project)], { type: "text/markdown;charset=utf-8" })
       );
+      showActionNotice(`${selectedSection.title} markdown exported.`);
       return;
     }
 
     if (exportFormat === "json") {
-      const projectJson = currentExportFiles.find((file) => file.path.endsWith("/project.json"));
-      const filename = `${projectName}.json`;
+      const sectionJson = currentExportFiles.find((file) => file.path.endsWith(".json"));
+      const filename = `${projectName}-${sectionSlug}.json`;
       recordExport("json", filename);
       downloadBlob(
         filename,
-        new Blob([projectJson?.content || "{}"], { type: "application/json;charset=utf-8" })
+        new Blob([sectionJson?.content || "{}"], { type: "application/json;charset=utf-8" })
       );
+      showActionNotice(`${selectedSection.title} JSON exported.`);
       return;
     }
 
     const zipBytes = createZip(currentExportFiles);
-    const filename = `${projectName}-export.zip`;
+    const filename = `${projectName}-${sectionSlug}-export.zip`;
     recordExport("zip", filename);
     downloadBlob(
       filename,
       new Blob([zipBytes], { type: "application/zip" })
     );
+    showActionNotice(`${selectedSection.title} package exported.`);
   }
 
   function downloadPublishPack() {
@@ -1266,6 +1445,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
       filename,
       new Blob([zipBytes], { type: "application/zip" })
     );
+    showActionNotice("Publish pack exported.");
   }
 
   function downloadBuilderPack() {
@@ -1277,13 +1457,19 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
       filename,
       new Blob([zipBytes], { type: "application/zip" })
     );
+    showActionNotice("Builder pack exported.");
   }
 
   async function copyReviewReport() {
     if (!project) return;
-    await navigator.clipboard.writeText(reviewReportMarkdown(project));
-    setReviewCopied(true);
-    window.setTimeout(() => setReviewCopied(false), 1300);
+    try {
+      await writeClipboard(reviewReportMarkdown(project));
+      setReviewCopied(true);
+      showActionNotice("Review report copied.");
+      window.setTimeout(() => setReviewCopied(false), 1300);
+    } catch {
+      showActionNotice("Copy failed. Clipboard permission may be blocked.", "error");
+    }
   }
 
   function downloadReviewReport() {
@@ -1294,6 +1480,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
       filename,
       new Blob([reviewReportMarkdown(project)], { type: "text/markdown;charset=utf-8" })
     );
+    showActionNotice("Review report exported.");
   }
 
   if (!loaded) {
@@ -1407,13 +1594,34 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               </button>
               <button
                 type="button"
-                disabled
-                className="cursor-not-allowed rounded-2xl border border-white/[0.06] bg-white/[0.025] px-4 py-2.5 text-sm font-bold text-white/28"
+                onClick={regenerateSection}
+                disabled={regenerateStatus === "running"}
+                className="rounded-2xl border border-white/[0.09] bg-white/[0.045] px-4 py-2.5 text-sm font-bold text-white/72 transition hover:border-[#A855F7]/35 hover:bg-[#8B5CF6]/12 hover:text-white disabled:cursor-wait disabled:border-white/[0.06] disabled:bg-white/[0.025] disabled:text-white/32"
               >
-                Regenerate
+                {regenerateStatus === "running"
+                  ? "Regenerating"
+                  : regenerateStatus === "done"
+                    ? "Done"
+                    : regenerateStatus === "failed"
+                      ? "Failed"
+                      : "Regenerate"}
               </button>
             </div>
           </div>
+
+          {actionNotice ? (
+            <div
+              className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                actionNotice.tone === "error"
+                  ? "border-red-400/20 bg-red-400/10 text-red-100"
+                  : actionNotice.tone === "info"
+                    ? "border-[#A855F7]/22 bg-[#8B5CF6]/10 text-violet-100"
+                    : "border-emerald-400/20 bg-emerald-400/10 text-emerald-100"
+              }`}
+            >
+              {actionNotice.message}
+            </div>
+          ) : null}
 
           {selectedId !== "review" ? (
           <article className="mt-6 overflow-hidden rounded-3xl border border-[#8B5CF6]/18 bg-[#120A20]/78">
@@ -1943,21 +2151,21 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
           <section className="relative z-10 grid max-h-[82dvh] w-full max-w-5xl overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#090512]/95 shadow-[0_32px_120px_rgba(0,0,0,0.74),0_0_120px_rgba(139,92,246,0.22)] lg:grid-cols-[320px_minmax(0,1fr)]">
             <aside className="border-b border-white/[0.07] p-5 lg:border-b-0 lg:border-r">
               <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#A855F7]">
-                Export current project
+                Export selected section
               </p>
               <h3 className="mt-3 text-2xl font-black tracking-[-0.045em] text-white">
-                Download package
+                Download {selectedSection.title}
               </h3>
               <p className="mt-3 text-sm leading-6 text-white/48">
-                Preview the generated deliverables before exporting. ZIP keeps the full
-                folder structure under exports/{slugify(project.title)}/.
+                Preview the selected deliverable before exporting. ZIP keeps the file
+                structure under exports/{slugify(project.title)}/.
               </p>
 
               <div className="mt-6 grid gap-2">
                 {[
-                  { id: "markdown", label: "Markdown", description: "Single combined .md file" },
-                  { id: "json", label: "JSON", description: "Machine-readable project.json" },
-                  { id: "zip", label: "ZIP package", description: "Full export folder with all files" },
+                  { id: "markdown", label: "Markdown", description: "Selected section .md file" },
+                  { id: "json", label: "JSON", description: "Selected section data" },
+                  { id: "zip", label: "ZIP package", description: "Selected section files" },
                 ].map((option) => {
                   const active = exportFormat === option.id;
                   return (
