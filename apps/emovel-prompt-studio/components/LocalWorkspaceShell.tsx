@@ -3,21 +3,76 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
+type LocalProjectStatus = "Generating" | "Ready";
+
+type StrategyAsset = {
+  audience: string;
+  problem: string;
+  positioning: string;
+  opportunity: string;
+};
+
+type OfferAsset = {
+  offerName: string;
+  pricing: string;
+  deliverables: string[];
+  guarantee: string;
+};
+
+type CopyAsset = {
+  headline: string;
+  subheadline: string;
+  cta: string;
+  offerDescription: string;
+};
+
+type UXAsset = {
+  pageStructure: string[];
+  sections: string[];
+  hierarchy: string;
+};
+
+type DesignAsset = {
+  colorPalette: string[];
+  typography: string;
+  visualDirection: string;
+};
+
+type BuildAsset = {
+  stack: string[];
+  pages: string[];
+  components: string[];
+};
+
+type PublishAsset = {
+  launchChecklist: string[];
+  contentPlan: string[];
+  distributionChannels: string[];
+};
+
+type GeneratedAssets = {
+  strategy: StrategyAsset;
+  offer: OfferAsset;
+  copy: CopyAsset;
+  ux: UXAsset;
+  design: DesignAsset;
+  build: BuildAsset;
+  publish: PublishAsset;
+};
+
 type LocalProject = {
   id: string;
   title: string;
   prompt: string;
   createdAt: string;
-  status: "Generating" | "Ready";
+  status: LocalProjectStatus;
+  assets?: GeneratedAssets;
 };
 
 type WorkspaceSection = {
-  id: string;
+  id: "overview" | keyof GeneratedAssets;
   title: string;
   eyebrow: string;
-  summary: string;
-  previewTitle: string;
-  bullets: string[];
   nextAction: string;
 };
 
@@ -26,119 +81,42 @@ type LocalWorkspaceShellProps = {
 };
 
 const workspaceSections: WorkspaceSection[] = [
-  {
-    id: "overview",
-    title: "Overview",
-    eyebrow: "Workspace brief",
-    summary:
-      "A local command center for turning the source prompt into a structured launch package. Review each section, then move from strategy to publish-ready assets.",
-    previewTitle: "Product workspace",
-    bullets: [
-      "Clarify the intended outcome and buyer.",
-      "Shape the offer, narrative, UX, and visual direction.",
-      "Prepare a build plan and launch checklist.",
-    ],
-    nextAction: "Review Strategy and lock the target user.",
-  },
-  {
-    id: "strategy",
-    title: "Strategy",
-    eyebrow: "Market direction",
-    summary:
-      "Position this as a premium outcome-driven product system. Lead with the transformation, define one ideal buyer, and make the first milestone obvious within the first screen.",
-    previewTitle: "Strategic angle",
-    bullets: [
-      "Primary buyer: founder or operator who needs launch assets quickly.",
-      "Promise: one prompt becomes a coordinated product workspace.",
-      "Differentiator: strategy, UX, copy, build, and publish live together.",
-    ],
-    nextAction: "Confirm the buyer and the first measurable outcome.",
-  },
-  {
-    id: "offer",
-    title: "Offer",
-    eyebrow: "Commercial shape",
-    summary:
-      "Package the outcome as a complete launch asset: landing page, product narrative, conversion copy, workspace plan, and publish checklist.",
-    previewTitle: "Offer stack",
-    bullets: [
-      "Core asset: product workspace generated from the prompt.",
-      "Bonus assets: launch copy, visual brief, and build checklist.",
-      "Decision point: choose one CTA and make the value immediately visible.",
-    ],
-    nextAction: "Write the one-line promise customers should remember.",
-  },
-  {
-    id: "copy",
-    title: "Copy",
-    eyebrow: "Messaging stack",
-    summary:
-      "Use a direct headline, one proof-led subheadline, three benefit blocks, and a single CTA. Avoid tool jargon. Sell the finished state, not the process.",
-    previewTitle: "Copy direction",
-    bullets: [
-      "Headline: name the outcome in plain language.",
-      "Subheadline: explain what EMOVEL creates and why it matters.",
-      "CTA: Generate Workspace, consistently repeated.",
-    ],
-    nextAction: "Draft the first-page headline and CTA pair.",
-  },
-  {
-    id: "ux",
-    title: "UX",
-    eyebrow: "User path",
-    summary:
-      "Open with the primary action, then progressively reveal details. The path should be prompt, generated workspace, review sections, then publish package.",
-    previewTitle: "Experience flow",
-    bullets: [
-      "Left rail controls context without stealing focus.",
-      "Center panel shows the selected asset only.",
-      "Right panel keeps project metadata and next action visible.",
-    ],
-    nextAction: "Review whether the next click is always obvious.",
-  },
-  {
-    id: "design",
-    title: "Design",
-    eyebrow: "Visual direction",
-    summary:
-      "Dark violet luxury AI OS. Use cinematic glow, glass panels, crisp typography, restrained motion, and high-contrast action states around the workspace CTA.",
-    previewTitle: "Design system notes",
-    bullets: [
-      "Palette: #05020A base, #8B5CF6 and #A855F7 accents.",
-      "Surfaces: translucent panels, thin borders, inner highlight.",
-      "Mood: Linear precision, Vercel restraint, Raycast command clarity.",
-    ],
-    nextAction: "Keep visual weight on the selected asset and action buttons.",
-  },
-  {
-    id: "build",
-    title: "Build",
-    eyebrow: "Implementation plan",
-    summary:
-      "Create a responsive Next.js shell, store project state locally, render generated sections from typed data, and preserve the route as the project command center.",
-    previewTitle: "Build checklist",
-    bullets: [
-      "Persist local project data in browser storage.",
-      "Render selected sections without server calls.",
-      "Keep future regeneration disabled until AI wiring exists.",
-    ],
-    nextAction: "Turn the mock asset schema into persisted generated outputs.",
-  },
-  {
-    id: "publish",
-    title: "Publish",
-    eyebrow: "Launch assets",
-    summary:
-      "Prepare a launch checklist, social announcement, product listing outline, QA pass, and a final handoff note. Treat this workspace as publish-ready draft material.",
-    previewTitle: "Publish package",
-    bullets: [
-      "Create launch checklist and final QA pass.",
-      "Prepare product listing copy and announcement copy.",
-      "Bundle the handoff into a clean publish package.",
-    ],
-    nextAction: "Review the launch checklist before exporting assets.",
-  },
+  { id: "overview", title: "Overview", eyebrow: "Workspace brief", nextAction: "Review Strategy and confirm the audience." },
+  { id: "strategy", title: "Strategy", eyebrow: "Audience and positioning", nextAction: "Lock the target audience and opportunity." },
+  { id: "offer", title: "Offer", eyebrow: "Commercial package", nextAction: "Review price and guarantee before writing copy." },
+  { id: "copy", title: "Copy", eyebrow: "Conversion messaging", nextAction: "Use the headline and CTA as the landing page anchor." },
+  { id: "ux", title: "UX", eyebrow: "Page flow", nextAction: "Turn the hierarchy into the first page wireframe." },
+  { id: "design", title: "Design", eyebrow: "Visual system", nextAction: "Apply the palette and typography to the primary screen." },
+  { id: "build", title: "Build", eyebrow: "Implementation map", nextAction: "Create the pages and component list in the build workspace." },
+  { id: "publish", title: "Publish", eyebrow: "Launch plan", nextAction: "Work through the launch checklist before distribution." },
 ];
+
+const assetLabels: Record<string, string> = {
+  audience: "Audience",
+  problem: "Problem",
+  positioning: "Positioning",
+  opportunity: "Opportunity",
+  offerName: "Offer name",
+  pricing: "Pricing",
+  deliverables: "Deliverables",
+  guarantee: "Guarantee",
+  headline: "Headline",
+  subheadline: "Subheadline",
+  cta: "CTA",
+  offerDescription: "Offer description",
+  pageStructure: "Page structure",
+  sections: "Sections",
+  hierarchy: "Hierarchy",
+  colorPalette: "Color palette",
+  typography: "Typography",
+  visualDirection: "Visual direction",
+  stack: "Stack",
+  pages: "Pages",
+  components: "Components",
+  launchChecklist: "Launch checklist",
+  contentPlan: "Content plan",
+  distributionChannels: "Distribution channels",
+};
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {
@@ -147,31 +125,167 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function sentenceCase(value: string) {
+  const clean = value.trim().replace(/\s+/g, " ");
+  if (!clean) return "Premium workspace";
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
+}
+
+function stripPromptCommand(prompt: string) {
+  return sentenceCase(
+    prompt
+      .replace(/^(create|build|design|launch|generate|make|turn)\s+/i, "")
+      .replace(/\.$/, "")
+  );
+}
+
+function inferMarket(prompt: string) {
+  const lower = prompt.toLowerCase();
+  if (lower.includes("agency")) return "premium AI agency";
+  if (lower.includes("saas")) return "SaaS product";
+  if (lower.includes("gumroad") || lower.includes("product")) return "digital product";
+  if (lower.includes("content")) return "creator operating system";
+  if (lower.includes("site") || lower.includes("landing")) return "conversion website";
+  return "AI-powered launch system";
+}
+
+function inferAudience(prompt: string) {
+  const lower = prompt.toLowerCase();
+  if (lower.includes("founder")) return "solo founders and lean operators";
+  if (lower.includes("agency")) return "service businesses selling high-trust AI transformation";
+  if (lower.includes("saas")) return "B2B teams validating a new product workflow";
+  if (lower.includes("creator") || lower.includes("content")) return "creators who need a repeatable publishing engine";
+  return "builders who need polished product assets without a long production cycle";
+}
+
+function generateAssets(prompt: string, title: string): GeneratedAssets {
+  const concept = stripPromptCommand(prompt);
+  const market = inferMarket(prompt);
+  const audience = inferAudience(prompt);
+  const offerName = `${title.replace(/\.$/, "")} Launch System`;
+
+  return {
+    strategy: {
+      audience,
+      problem: `${sentenceCase(audience)} often have a clear idea but lose momentum turning it into strategy, UX, copy, build direction, and launch material.`,
+      positioning: `${concept} is positioned as a premium ${market} command workspace that converts one prompt into coordinated execution assets.`,
+      opportunity: `Own the gap between raw AI prompting and finished launch operations by making the workspace feel decisive, visual, and ready to act on.`,
+    },
+    offer: {
+      offerName,
+      pricing: "Pilot price: $149 for the generated launch workspace; premium package: $499 with implementation review.",
+      deliverables: [
+        "Strategy brief with audience, problem, positioning, and opportunity",
+        "Offer architecture with pricing, deliverables, and guarantee",
+        "Landing copy, UX structure, design direction, build map, and publish plan",
+      ],
+      guarantee: "If the workspace does not produce a clear launch direction in 30 minutes, revise the prompt and regenerate the package at no extra cost.",
+    },
+    copy: {
+      headline: `${concept} from one prompt.`,
+      subheadline: `EMOVEL turns your idea into a structured ${market} workspace with strategy, offer, copy, UX, design, build, and publish assets.`,
+      cta: "Generate Workspace",
+      offerDescription: `A local-first launch workspace for ${audience}, designed to move from idea to premium product entry point without waiting on AI APIs or manual planning docs.`,
+    },
+    ux: {
+      pageStructure: [
+        "Hero with outcome headline and single prompt composer",
+        "Generated workspace with left navigation, focused asset view, and project inspector",
+        "Publish-ready section with checklist and distribution plan",
+      ],
+      sections: ["Hero", "Prompt composer", "Workspace shell", "Asset preview", "Project inspector", "Publish plan"],
+      hierarchy: "Lead with the primary prompt action, then use the workspace route as the core command surface where each asset is reviewed one at a time.",
+    },
+    design: {
+      colorPalette: ["#05020A base", "#120A20 panels", "#8B5CF6 primary violet", "#A855F7 glow accent", "rgba(255,255,255,0.72) text"],
+      typography: "Use dense, premium sans-serif hierarchy: oversized confident headings, small uppercase metadata, and readable 14-16px body text.",
+      visualDirection: "Dark luxury AI OS with Linear clarity, Vercel spacing discipline, Raycast command density, glass borders, and cinematic violet spotlighting.",
+    },
+    build: {
+      stack: ["Next.js App Router", "React client components", "Tailwind CSS", "localStorage persistence", "deterministic TypeScript asset generation"],
+      pages: ["/", "/workspace/[id]", "/projects", "/new-project"],
+      components: ["Home prompt composer", "LocalWorkspaceShell", "Section sidebar", "Asset preview card", "Project inspector", "Copy action"],
+    },
+    publish: {
+      launchChecklist: [
+        "Confirm headline, offer name, and CTA",
+        "Review UX hierarchy on desktop and mobile",
+        "Package screenshots and generated copy into a launch note",
+        "Publish the landing page or product listing",
+      ],
+      contentPlan: [
+        "Launch post: before/after from raw prompt to workspace",
+        "Short demo: navigate Strategy to Publish sections",
+        "Founder note: why local-first generated assets matter",
+      ],
+      distributionChannels: ["Product Hunt", "LinkedIn", "X/Twitter", "Founder communities", "Gumroad or Lemon Squeezy listing"],
+    },
+  };
+}
+
+function projectWithAssets(project: LocalProject): LocalProject {
+  if (project.assets) return project;
+  return {
+    ...project,
+    assets: generateAssets(project.prompt, project.title),
+  };
+}
+
+function overviewAsset(project: LocalProject) {
+  return {
+    "Project title": project.title,
+    Status: project.status,
+    "Generated assets": "Strategy, Offer, Copy, UX, Design, Build, Publish",
+    "Source prompt": project.prompt,
+  };
+}
+
+function selectedAsset(project: LocalProject, selectedId: WorkspaceSection["id"]) {
+  if (selectedId === "overview") return overviewAsset(project);
+  return project.assets?.[selectedId] || {};
+}
+
+function valueToText(value: unknown) {
+  if (Array.isArray(value)) return value.map((item) => `- ${item}`).join("\n");
+  return String(value);
+}
+
 function sectionMarkdown(section: WorkspaceSection, project: LocalProject) {
+  const asset = selectedAsset(project, section.id);
+  const fields = Object.entries(asset)
+    .map(([key, value]) => `## ${assetLabels[key] || key}\n${valueToText(value)}`)
+    .join("\n\n");
+
   return `# ${section.title}
 
 Project: ${project.title}
 Status: ${project.status}
 
-${section.summary}
-
-${section.bullets.map((bullet) => `- ${bullet}`).join("\n")}
-
-Source prompt:
-${project.prompt}
+${fields}
 `;
 }
 
 export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   const [project, setProject] = useState<LocalProject | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [selectedId, setSelectedId] = useState("overview");
+  const [selectedId, setSelectedId] = useState<WorkspaceSection["id"]>("overview");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(`emovel-project:${id}`);
     if (stored) {
-      setProject(JSON.parse(stored) as LocalProject);
+      const parsed = JSON.parse(stored) as LocalProject;
+      const hydrated = projectWithAssets(parsed);
+      setProject(hydrated);
+      localStorage.setItem(`emovel-project:${id}`, JSON.stringify(hydrated));
+
+      const list = localStorage.getItem("emovel-projects");
+      if (list) {
+        const projects = (JSON.parse(list) as LocalProject[]).map((item) =>
+          item.id === hydrated.id ? hydrated : item
+        );
+        localStorage.setItem("emovel-projects", JSON.stringify(projects));
+      }
     }
     setLoaded(true);
   }, [id]);
@@ -180,6 +294,11 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     () => workspaceSections.find((section) => section.id === selectedId) || workspaceSections[0],
     [selectedId]
   );
+
+  const currentAsset = useMemo(() => {
+    if (!project) return {};
+    return selectedAsset(project, selectedSection.id);
+  }, [project, selectedSection.id]);
 
   async function copySection() {
     if (!project) return;
@@ -300,35 +419,42 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
             </div>
           </div>
 
-          <article className="mt-6 rounded-3xl border border-white/[0.07] bg-white/[0.035] p-6">
-            <p className="text-base leading-8 text-white/72">{selectedSection.summary}</p>
-          </article>
-
-          <article className="mt-4 overflow-hidden rounded-3xl border border-[#8B5CF6]/18 bg-[#120A20]/78">
+          <article className="mt-6 overflow-hidden rounded-3xl border border-[#8B5CF6]/18 bg-[#120A20]/78">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <div>
                 <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-white/34">
-                  Asset Preview
+                  Structured Asset
                 </p>
                 <h3 className="mt-1 text-lg font-black tracking-[-0.03em] text-white">
-                  {selectedSection.previewTitle}
+                  {selectedSection.title} deliverable
                 </h3>
               </div>
               <span className="rounded-full border border-[#A855F7]/24 bg-[#8B5CF6]/12 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200">
-                Draft
+                Deterministic
               </span>
             </div>
 
             <div className="grid gap-3 p-5">
-              {selectedSection.bullets.map((bullet, index) => (
+              {Object.entries(currentAsset).map(([key, value]) => (
                 <div
-                  key={bullet}
-                  className="flex gap-3 rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4"
+                  key={key}
+                  className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4"
                 >
-                  <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CF6]/16 font-mono text-[10px] font-black text-[#A855F7]">
-                    {index + 1}
-                  </span>
-                  <p className="text-sm leading-6 text-white/62">{bullet}</p>
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    {assetLabels[key] || key}
+                  </p>
+                  {Array.isArray(value) ? (
+                    <ul className="mt-3 grid gap-2">
+                      {value.map((item) => (
+                        <li key={item} className="flex gap-2 text-sm leading-6 text-white/64">
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8B5CF6]" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-3 text-sm leading-7 text-white/66">{String(value)}</p>
+                  )}
                 </div>
               ))}
             </div>
