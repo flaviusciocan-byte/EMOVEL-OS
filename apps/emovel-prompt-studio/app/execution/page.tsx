@@ -14,26 +14,14 @@ export const dynamic = "force-dynamic";
 const actionGroups = ["Strategy", "Content", "UX", "Build", "Publish", "QA"] as const;
 
 type ExecutionPageProps = {
-  searchParams?: {
-    status?: string;
-    group?: string;
-  };
+  searchParams?: { status?: string; group?: string };
 };
 
 function statusBadgeClass(status: ActionQueueStatus) {
-  if (status === "Done") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  }
-
-  if (status === "Blocked") {
-    return "border-red-200 bg-red-50 text-red-700";
-  }
-
-  if (status === "In Progress") {
-    return "border-blue/20 bg-blue/10 text-blue";
-  }
-
-  return "border-line bg-cloud text-slate-700";
+  if (status === "Done") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
+  if (status === "Blocked") return "border-red-500/30 bg-red-500/10 text-red-400";
+  if (status === "In Progress") return "border-violet-500/30 bg-violet-500/10 text-violet-400";
+  return "border-white/[0.07] bg-white/[0.03] text-white/40";
 }
 
 function matchesStatus(value: string | undefined): value is ActionQueueStatus {
@@ -48,7 +36,6 @@ function filterTasks(tasks: ExecutionInboxTask[], status?: string, group?: strin
   return tasks.filter((task) => {
     const statusMatches = matchesStatus(status) ? task.status === status : true;
     const groupMatches = matchesGroup(group) ? task.group === group : true;
-
     return statusMatches && groupMatches;
   });
 }
@@ -65,11 +52,9 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
 
   async function updateTaskStatusAction(formData: FormData) {
     "use server";
-
     const projectSlug = String(formData.get("projectSlug") || "");
     const taskId = String(formData.get("taskId") || "");
     const status = String(formData.get("status") || "") as ActionQueueStatus;
-
     await updateActionQueueTaskStatus(projectSlug, taskId, status);
     revalidatePath("/execution");
     revalidatePath(`/projects/${projectSlug}`);
@@ -79,68 +64,73 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
     <main className="mx-auto max-w-7xl px-5 py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-blue">
+          <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-violet-400">
             Execution Inbox
           </p>
-          <h1 className="mt-2 text-4xl font-black tracking-[-0.04em]">Central Execution</h1>
-          <p className="mt-3 max-w-3xl text-sm font-bold leading-6 text-slate-600">
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white md:text-4xl">
+            Central Execution
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">
             A local inbox for every task found in generated project ACTION_QUEUE.md files. No APIs,
             shell commands, builders, or publishing actions run from this page.
           </p>
         </div>
-        <Link className="rounded-emovel border border-line bg-white px-5 py-3 font-black" href="/projects">
+        <Link
+          className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-5 py-2.5 text-sm font-bold text-white/60 transition hover:bg-white/[0.08] hover:text-white/90"
+          href="/projects"
+        >
           Projects
         </Link>
       </div>
 
-      <form className="mb-6 grid gap-3 rounded-emovel border border-line bg-white p-5 md:grid-cols-[1fr_1fr_auto]" method="get">
+      {/* Filter form */}
+      <form
+        className="mb-6 grid gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-sm md:grid-cols-[1fr_1fr_auto]"
+        method="get"
+      >
         <label className="grid gap-2">
-          <span className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-            Status
-          </span>
+          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">Status</span>
           <select
-            className="rounded-emovel border border-line bg-white px-3 py-2 text-sm font-bold"
+            className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2.5 text-sm font-medium text-white/70 outline-none focus:border-violet-500/40 focus:text-white/90"
             defaultValue={selectedStatus}
             name="status"
           >
             <option value="All">All</option>
             {actionQueueStatuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
+              <option key={status} value={status}>{status}</option>
             ))}
           </select>
         </label>
         <label className="grid gap-2">
-          <span className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-            Group
-          </span>
+          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">Group</span>
           <select
-            className="rounded-emovel border border-line bg-white px-3 py-2 text-sm font-bold"
+            className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2.5 text-sm font-medium text-white/70 outline-none focus:border-violet-500/40 focus:text-white/90"
             defaultValue={selectedGroup}
             name="group"
           >
             <option value="All">All</option>
             {actionGroups.map((group) => (
-              <option key={group} value={group}>
-                {group}
-              </option>
+              <option key={group} value={group}>{group}</option>
             ))}
           </select>
         </label>
-        <button className="self-end rounded-emovel bg-ink px-5 py-3 font-black text-white" type="submit">
+        <button
+          className="cursor-pointer self-end rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-violet-500"
+          type="submit"
+        >
           Apply Filters
         </button>
       </form>
 
-      <div className="mb-5 flex flex-wrap gap-2 font-mono text-xs font-black text-slate-600">
-        <span className="rounded-full border border-line bg-white px-3 py-1">
-          Showing {tasks.length} of {allTasks.length} tasks
+      {/* Stats */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1 font-mono text-[10px] text-white/40">
+          {tasks.length} of {allTasks.length} tasks
         </span>
-        <span className="rounded-full border border-line bg-white px-3 py-1">
+        <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1 font-mono text-[10px] text-white/40">
           Status: {selectedStatus}
         </span>
-        <span className="rounded-full border border-line bg-white px-3 py-1">
+        <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1 font-mono text-[10px] text-white/40">
           Group: {selectedGroup}
         </span>
       </div>
@@ -148,48 +138,39 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
       {tasks.length ? (
         <section className="grid gap-4">
           {tasks.map((task) => (
-            <article className="rounded-emovel border border-line bg-white p-5" key={`${task.projectSlug}-${task.id}`}>
+            <article
+              className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-sm transition hover:border-violet-500/15"
+              key={`${task.projectSlug}-${task.id}`}
+            >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-blue">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-violet-400">
                     {task.projectName} / {task.group}
                   </p>
-                  <h2 className="mt-2 text-xl font-black tracking-[-0.02em]">{task.taskName}</h2>
-                  <p className="mt-2 font-mono text-xs font-bold text-slate-600">{task.id}</p>
+                  <h2 className="mt-2 text-lg font-bold tracking-[-0.02em] text-white/90">{task.taskName}</h2>
+                  <p className="mt-1 font-mono text-[10px] text-white/30">{task.id}</p>
                 </div>
-                <span
-                  className={`rounded-full border px-3 py-1 font-mono text-xs font-black ${statusBadgeClass(
-                    task.status
-                  )}`}
-                >
+                <span className={`rounded-full border px-3 py-1 font-mono text-xs font-bold ${statusBadgeClass(task.status)}`}>
                   {task.status}
                 </span>
               </div>
 
-              <dl className="mt-5 grid gap-3 text-sm font-bold text-slate-700 md:grid-cols-2">
+              <dl className="mt-5 grid gap-3 text-xs md:grid-cols-2">
                 <div>
-                  <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">
-                    Owner/tool
-                  </dt>
-                  <dd>{task.ownerTool}</dd>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/25">Owner/tool</dt>
+                  <dd className="mt-0.5 font-medium text-white/60">{task.ownerTool}</dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">
-                    Mode
-                  </dt>
-                  <dd>{task.mode}</dd>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/25">Mode</dt>
+                  <dd className="mt-0.5 font-medium text-white/60">{task.mode}</dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">
-                    Input file
-                  </dt>
-                  <dd className="font-mono text-xs">{task.inputFile}</dd>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/25">Input file</dt>
+                  <dd className="mt-0.5 font-mono text-[10px] text-white/40">{task.inputFile}</dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">
-                    Output file
-                  </dt>
-                  <dd className="font-mono text-xs">{task.outputFile}</dd>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/25">Output file</dt>
+                  <dd className="mt-0.5 font-mono text-[10px] text-white/40">{task.outputFile}</dd>
                 </div>
               </dl>
 
@@ -198,23 +179,21 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
                   <input name="projectSlug" type="hidden" value={task.projectSlug} />
                   <input name="taskId" type="hidden" value={task.id} />
                   <select
-                    className="rounded-emovel border border-line bg-white px-3 py-2 text-sm font-bold"
+                    className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2 text-xs font-bold text-white/60 outline-none focus:border-violet-500/40"
                     defaultValue={task.status}
                     name="status"
                   >
                     {actionQueueStatuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
+                      <option key={status} value={status}>{status}</option>
                     ))}
                   </select>
-                  <button className="rounded-emovel bg-blue px-4 py-2 text-sm font-black text-white" type="submit">
+                  <button className="cursor-pointer rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-violet-500" type="submit">
                     Update status
                   </button>
                 </form>
                 <div className="flex flex-wrap gap-2">
                   <Link
-                    className="rounded-emovel border border-line bg-white px-4 py-2 text-sm font-black"
+                    className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-2 text-xs font-bold text-white/50 transition hover:bg-white/[0.08] hover:text-white/80"
                     href={`/projects/${task.projectSlug}`}
                   >
                     Open Project
@@ -226,19 +205,21 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
                 </div>
               </div>
 
-              <details className="mt-5 rounded-emovel border border-line bg-cloud">
-                <summary className="cursor-pointer px-4 py-3 font-black">Open related executor prompt</summary>
+              <details className="mt-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-white/50 hover:text-white/80">
+                  Open related executor prompt
+                </summary>
                 {task.executorPromptContent ? (
                   <div>
-                    <p className="border-y border-line bg-white px-4 py-3 font-mono text-xs font-bold text-slate-600">
+                    <p className="border-y border-white/[0.05] px-4 py-3 font-mono text-[10px] text-white/30">
                       {task.executorPromptFile}
                     </p>
-                    <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap p-4 font-mono text-sm leading-7 text-slate-800">
+                    <pre className="max-h-[380px] overflow-auto whitespace-pre-wrap p-4 font-mono text-xs leading-6 text-white/40">
                       {task.executorPromptContent}
                     </pre>
                   </div>
                 ) : (
-                  <p className="px-4 py-3 text-sm font-bold text-slate-600">
+                  <p className="px-4 py-3 text-xs text-white/35">
                     Executor prompt has not been generated yet. Open the project and use Generate Executor Prompts.
                   </p>
                 )}
@@ -247,9 +228,9 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
           ))}
         </section>
       ) : (
-        <section className="rounded-emovel border border-line bg-white p-8 text-center">
-          <h2 className="text-2xl font-black tracking-[-0.03em]">No matching execution tasks</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm font-bold leading-6 text-slate-600">
+        <section className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-10 text-center">
+          <h2 className="text-xl font-bold tracking-[-0.02em] text-white/80">No matching execution tasks</h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-white/35">
             Create an execution plan, generate an Action Queue, then return here to manage tasks across projects.
           </p>
         </section>

@@ -23,7 +23,7 @@ export function CopyMarkdownButton({
 
   return (
     <button
-      className="rounded-emovel border border-line bg-white px-4 py-2 text-xs font-black text-ink transition hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
+      className="cursor-pointer rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-2 text-xs font-bold text-white/50 transition duration-200 hover:border-violet-500/25 hover:bg-violet-500/[0.08] hover:text-violet-300 disabled:cursor-not-allowed disabled:opacity-40"
       disabled={!content}
       onClick={copyMarkdown}
       type="button"
