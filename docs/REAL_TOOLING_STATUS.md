@@ -13,6 +13,7 @@ This status reflects the extraction, detection, registration, and Tier S install
 - `awesome-gpt-image-2-API-and-Prompts-main`
 - `Nano-Banana-Pro-main`
 - `postiz-app-main`
+- `code-review-graph-main`
 
 External tool root:
 
@@ -22,7 +23,7 @@ External tool root:
 
 | Status | Tools |
 |---|---|
-| INSTALLED | `21st-sdk-main` |
+| INSTALLED | `21st-sdk-main`, `code-review-graph-main` |
 | INSTALL_READY | `ui-ux-pro-max-skill-main` |
 | REGISTERED | `quant-ux-master`, `nano-banana-2-ai-main`, `awesome-gpt-image-2-API-and-Prompts-main`, `Nano-Banana-Pro-main` |
 | FAILED | None in this sprint |
@@ -39,6 +40,7 @@ External tool root:
 | Awesome GPT Image 2 API and Prompts | `C:\EMOVEL\tools\awesome-gpt-image-2-API-and-Prompts-main\awesome-gpt-image-2-API-and-Prompts-main` |
 | Nano Banana Pro | `C:\EMOVEL\tools\Nano-Banana-Pro-main\Nano-Banana-Pro-main` |
 | Postiz | `C:\EMOVEL\tools\postiz-app-main\postiz-app-main` |
+| code-review-graph | `C:\EMOVEL\tools\code-review-graph-main\code-review-graph-main` |
 
 ## Install Results
 
@@ -57,6 +59,17 @@ External tool root:
 - No local dependency install was run.
 - Optional global CLI mentioned in README was not installed because global installs were not explicitly required.
 
+### code-review-graph
+
+- ZIP verified at `C:\Users\flavi\Downloads\code-review-graph-main.zip`.
+- Extracted to `C:\EMOVEL\tools\code-review-graph-main`.
+- Real extracted path is nested: `C:\EMOVEL\tools\code-review-graph-main\code-review-graph-main`.
+- Detected `README.md`, `pyproject.toml`, `.mcp.json`, and `code-review-graph-vscode\package.json`.
+- No `requirements.txt` or `Dockerfile` was detected at the real tool path.
+- README install command `pip install code-review-graph` was run.
+- `pip show code-review-graph` confirms version `2.3.6`.
+- `code-review-graph --help` confirms the CLI is available.
+
 ## Deferred Tools
 
 - Quant UX was detected and registered but not installed.
@@ -67,52 +80,57 @@ External tool root:
 
 ## Not Faked
 
-- No MCP connection was claimed.
+- code-review-graph MCP server availability was verified by CLI/config only; no MCP server was started or connected.
+- code-review-graph Claude Code support was verified by `install --help`; no Claude Code platform config was written.
+- code-review-graph VS Code extension source exists; it was not built or installed.
 - No Docker compose command was run.
 - No social account was connected.
 - No post was published.
 - No visual repo dependency install was run.
 - No Quant UX install was run.
-- No global package was installed.
 
 ---
 
-## Sprint: code-review-graph Integration — 2026-06-22
+## Sprint: code-review-graph Integration - 2026-06-22
 
 ### Tool
 
 `code-review-graph-main`
 
-### Expected path
+### Real Path
 
-`C:\EMOVEL\tools\code-review-graph-main`
+`C:\EMOVEL\tools\code-review-graph-main\code-review-graph-main`
 
 ### Result
 
-**BLOCKED — NOT_FOUND**
+**INSTALLED - NOT CONNECTED**
 
-The directory does not exist on this machine. A full drive search at maxdepth 5 returned no results for any path containing `code-review-graph`. The tool was not present in:
+The tool source is extracted and inspected. The Python package is installed globally for the current Python 3.12 installation, and the CLI is available on PATH.
 
-- `C:\EMOVEL\tools\`
-- `C:\Users\flavi\Desktop\`
-- `C:\Users\flavi\Downloads\`
-- Any other searched location
+### Verified Capabilities
+
+| Capability | Available | Connected/Installed |
+|---|---:|---:|
+| CLI | YES | YES |
+| MCP server implementation | YES | NO |
+| Claude Code integration support | YES | NO |
+| VS Code extension source | YES | NO |
 
 ### Actions Taken
 
 | Action | Result |
 |---|---|
-| Directory existence check | `NOT_FOUND` |
-| Drive-wide search | No match |
-| README read | `BLOCKED` |
-| Integration type detection | `BLOCKED` |
-| Install | `NOT RUN` |
-| MCP registration | `NOT DONE` |
-| Claude Code skill registration | `NOT DONE` |
-| VS Code extension check | `BLOCKED` |
-| `config/tools.json` updated | YES — status `NOT_FOUND` |
-| `docs/CODE_REVIEW_GRAPH_INTEGRATION.md` created | YES |
+| ZIP existence check | FOUND |
+| Extraction | DONE |
+| README read | DONE |
+| Manifest detection | DONE |
+| Install | DONE, `code-review-graph 2.3.6` |
+| MCP registration | NOT DONE |
+| Claude Code skill/config registration | NOT DONE |
+| VS Code extension install | NOT DONE |
+| `config/tools.json` updated | YES - status `INSTALLED` |
+| `docs/CODE_REVIEW_GRAPH_INTEGRATION.md` updated | YES |
 
 ### Nothing Was Invented
 
-No capabilities, install results, MCP endpoints, CLI commands, or integration points were fabricated. All fields in `tools.json` for this tool reflect the real state: directory absent, all manifest flags null, status `NOT_FOUND`.
+No MCP connection, running service, Claude Code configuration, VS Code extension installation, or Prompt Studio integration was claimed.

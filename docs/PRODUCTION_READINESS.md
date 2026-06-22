@@ -6,7 +6,7 @@ Updated: 2026-06-22
 
 Status: `REGISTERED_WITH_PARTIAL_INSTALL`
 
-EMOVEL-OS is acting as the control center for external production tools. The requested ZIPs are extracted outside the repo, registered by exact path, and audited. One Tier S dependency tool, `21st-sdk-main`, is installed. `ui-ux-pro-max-skill-main` is ready for skill/reference use but has no local dependency install in its extracted path. Postiz is now registered as the social publishing layer but needs manual setup before use.
+EMOVEL-OS is acting as the control center for external production tools. The requested ZIPs are extracted outside the repo, registered by exact path, and audited. One Tier S dependency tool, `21st-sdk-main`, is installed. `ui-ux-pro-max-skill-main` is ready for skill/reference use but has no local dependency install in its extracted path. Postiz is registered as the social publishing layer but needs manual setup before use. `code-review-graph-main` is now extracted, installed as a Python CLI package, and registered without launching services or writing platform MCP config.
 
 ## Ready Components
 
@@ -22,7 +22,8 @@ EMOVEL-OS is acting as the control center for external production tools. The req
 | GPT image prompt library | REGISTERED | Path and README detected |
 | Nano Banana Pro | REGISTERED | Path and README detected |
 | Postiz social publishing | NEEDS_MANUAL_SETUP | Extracted and registered; Node engine mismatch prevents source install; nvm-windows not detected |
-| Prompt Studio build | PASS | `npm run build` passes |
+| code-review-graph CLI | INSTALLED | `pip show code-review-graph` reports `2.3.6`; `code-review-graph --help` works |
+| Prompt Studio build | PASS | `npm.cmd run build` passes |
 
 ## Deferred Setup
 
@@ -34,6 +35,9 @@ EMOVEL-OS is acting as the control center for external production tools. The req
 | Nano-Banana-Pro-main | Reference repo, no install needed |
 | UI UX Pro Max global CLI | Global install not explicitly approved |
 | postiz-app-main | Requires Node `>=22.12.0 <23.0.0` or Docker setup; local Node is `v24.16.0`; nvm-windows not detected; no containers launched |
+| code-review-graph MCP connection | Server command exists, but no server was started and no platform config was written |
+| code-review-graph Claude Code setup | Supported by CLI, but `code-review-graph install --platform claude-code` was not run |
+| code-review-graph VS Code extension | Source exists, but dependencies/build/VSIX install were not run |
 
 ## Production Use Guidance
 
@@ -43,6 +47,7 @@ EMOVEL-OS is acting as the control center for external production tools. The req
 - Use UI UX Pro Max as a design intelligence/reference layer unless a future sprint explicitly installs its optional CLI or skill integration.
 - Use Postiz as the reviewed handoff for `SOCIAL_LAUNCH_POSTS.md` after manual setup and account connection.
 - Use `docs/POSTIZ_NODE_SETUP.md` before attempting a source install of Postiz.
+- Use code-review-graph only as an installed CLI until a future targeted step connects MCP or platform configs.
 - Do not promote deferred tools to `PRODUCTION_READY` until they are installed, smoke-tested, and tied to a real EMOVEL workflow artifact.
 
 ## Not Performed
@@ -53,35 +58,37 @@ EMOVEL-OS is acting as the control center for external production tools. The req
 - No post was published.
 - No Quant UX install was run.
 - No visual repo install was run.
-- No global package install was run.
 - No paid API or MCP connection was claimed.
+- No code-review-graph MCP server was started.
+- No code-review-graph daemon or watch service was started.
+- No code-review-graph platform installer was run.
 
 ---
 
-## Sprint Update: code-review-graph — 2026-06-22
+## Sprint Update: code-review-graph - 2026-06-22
 
-### New Tool Added to Registry
+### Tool Added to Registry
 
 | Field | Value |
 |---|---|
 | Tool | `code-review-graph-main` |
-| Expected path | `C:\EMOVEL\tools\code-review-graph-main` |
-| Status | `NOT_FOUND` |
-| Category | `BUILDER_LAYER` (provisional) |
-| Installed | NO |
-| Integration type confirmed | NO |
+| Real path | `C:\EMOVEL\tools\code-review-graph-main\code-review-graph-main` |
+| Status | `INSTALLED` |
+| Category | `BUILDER_LAYER` |
+| Installed | YES, Python package `code-review-graph 2.3.6` |
+| MCP server | Available but not connected |
+| CLI | Available |
+| Claude Code integration | Supported but not configured |
+| VS Code extension | Source present but not installed |
 
 ### Impact on Overall Production Readiness
 
-No impact on existing components. The tool was registered with `NOT_FOUND` to track it. All previously listed components retain their status unchanged.
-
-### Unblock Requirement
-
-The ZIP or repository source must be located and extracted to `C:\EMOVEL\tools\code-review-graph-main\` before any integration work is possible.
+No existing component behavior changed. The integration unblocks future code-review-graph setup by registering the real extracted path and verified CLI state.
 
 ### What Was Not Claimed
 
 - No MCP endpoint was registered.
 - No CLI was wired into Prompt Studio.
-- No install was run.
+- No Claude Code config was written.
+- No VS Code extension was installed.
 - No capabilities were assumed or invented.

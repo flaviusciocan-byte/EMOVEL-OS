@@ -1,123 +1,69 @@
 # code-review-graph Integration
 
-**Sprint:** EMOVEL Tool Integration Sprint  
-**Date:** 2026-06-22  
-**Status:** BLOCKED — SOURCE DIRECTORY NOT FOUND
-
----
+**Sprint:** EMOVEL Code Review Graph Extraction Fix
+**Date:** 2026-06-22
+**Status:** INSTALLED, NOT CONNECTED
 
 ## Result Summary
 
 | Check | Result |
 |---|---|
-| Expected path | `C:\EMOVEL\tools\code-review-graph-main` |
-| Directory exists | NO |
-| Alternative paths searched | See below |
-| MCP server detected | CANNOT VERIFY |
-| Claude Code integration detected | CANNOT VERIFY |
-| CLI integration detected | CANNOT VERIFY |
-| VS Code integration detected | CANNOT VERIFY |
-| Install attempted | NO |
-| Registered in tools.json | YES — status NOT_FOUND |
+| Source ZIP | `C:\Users\flavi\Downloads\code-review-graph-main.zip` exists |
+| Extract target | `C:\EMOVEL\tools\code-review-graph-main` |
+| Real tool path | `C:\EMOVEL\tools\code-review-graph-main\code-review-graph-main` |
+| README.md | YES |
+| pyproject.toml | YES |
+| requirements.txt | NO |
+| Dockerfile | NO |
+| package.json | YES, in `code-review-graph-vscode\package.json` |
+| MCP config | YES, `.mcp.json` |
+| CLI entry points | YES, `code-review-graph`, `crg-daemon` |
+| Install attempted | YES, README command `pip install code-review-graph` |
+| Install completed | YES, `pip show code-review-graph` reports version `2.3.6` |
 
----
+## Verified Availability
 
-## Paths Searched
-
-The following paths were checked on this machine and returned no results:
-
-```
-C:\EMOVEL\tools\code-review-graph-main          → does not exist
-C:\EMOVEL\tools\                                 → directory listed; no code-review-graph entry
-C:\Users\flavi\Desktop\                         → searched; not found
-C:\Users\flavi\Downloads\                       → searched; not found
-C:\Users\flavi\                                  → recursive search; not found
-C:\ (maxdepth 5)                                → full drive search; not found
-```
-
-The `C:\EMOVEL\tools\` directory was confirmed present and contains 25 other extracted tools. `code-review-graph-main` is not among them.
-
----
-
-## What Was Not Done
-
-Nothing was invented, fabricated, or assumed to be present:
-
-- No install was run.
-- No MCP registration was performed.
-- No Claude Code hook was written.
-- No VS Code extension entry was created.
-- No CLI wrapper was created.
-- No integration code was written.
-
-The tool cannot be integrated until the source directory is present on disk.
-
----
-
-## What code-review-graph Likely Provides (Based on Name Only)
-
-> **Caveat:** The following is based solely on the tool's name. No source files were read. Do not treat this as verified capability.
-
-A tool named `code-review-graph` typically provides one or more of:
-
-- **Dependency graph visualization** — maps which files or modules are touched across pull requests
-- **Reviewer network graph** — shows review patterns between contributors
-- **Code churn graph** — visualizes change frequency over time per file/module
-- **AST-level code structure graph** — parses source code into a graph for static analysis
-- **Review flow graph** — models the review pipeline as a directed graph for CI/CD integration
-
-Without reading the actual README or source, the exact capability, runtime, and integration type are unknown.
-
----
-
-## How EMOVEL Prompt Studio Could Use It (Hypothetical)
-
-Once the tool is extracted and inspected, possible integration points are:
-
-### If it provides a CLI
-```bash
-# Example — unverified
-code-review-graph --path ./apps/emovel-prompt-studio --output graph.json
-```
-Prompt Studio's execution pipeline could call this as a pre-build step and include the graph output in `execution-plan.md` or `build-handoff.md`.
-
-### If it provides an MCP server
-Add it to `.claude/settings.json` under `mcpServers`:
-```json
-{
-  "mcpServers": {
-    "code-review-graph": {
-      "command": "node",
-      "args": ["path/to/code-review-graph/server.js"]
-    }
-  }
-}
-```
-
-### If it provides a Claude Code skill
-Copy or symlink its skill directory into `.claude/skills/` and invoke it with `/code-review-graph` during code review workflows.
-
-### If it provides a VS Code extension
-Install via `Extensions: Install from VSIX` in VS Code after building the `.vsix` package from source.
-
----
-
-## Requirements to Unblock
-
-1. **Locate the ZIP or source** — check `C:\Users\flavi\Downloads\`, external drives, GitHub, or the original download source
-2. **Extract to** `C:\EMOVEL\tools\code-review-graph-main\`
-3. **Re-run this sprint** — once the directory is present, return to Step 1 (Inspect the repository)
-
----
-
-## Next Steps
-
-| Priority | Action |
+| Capability | Verified State |
 |---|---|
-| P0 | Find or re-download the `code-review-graph-main` ZIP or repository |
-| P0 | Extract to `C:\EMOVEL\tools\code-review-graph-main\` |
-| P1 | Read README, package.json / pyproject.toml, and any MCP config files |
-| P1 | Determine integration type (MCP / CLI / VS Code / Claude skill) |
-| P2 | Run install if a dependency manifest is present |
-| P2 | Update `config/tools.json` status from `NOT_FOUND` to actual status |
-| P3 | Wire into Prompt Studio execution pipeline if CLI is confirmed |
+| CLI | YES - `code-review-graph --help` lists build, update, status, serve, mcp, daemon, and other commands |
+| MCP server | YES - `code-review-graph serve --help` exists and `.mcp.json` defines `uvx code-review-graph serve` |
+| MCP connected in EMOVEL | NO - no MCP server was registered or launched |
+| Claude Code integration | YES, supported by `code-review-graph install --platform claude-code` |
+| Claude Code configured in EMOVEL | NO - platform installer was not run |
+| VS Code extension | YES, source exists in `code-review-graph-vscode` |
+| VS Code extension installed | NO - no `npm install`, package build, VSIX install, or VS Code launch was run |
+
+## Install Notes
+
+The README provides a clear safe install command:
+
+```bash
+pip install code-review-graph
+```
+
+That command was run. The first sandboxed attempt failed due blocked network access. The approved retry timed out at the command wrapper level, but installation is confirmed afterward by:
+
+```bash
+pip show code-review-graph
+Get-Command code-review-graph
+code-review-graph --help
+```
+
+Confirmed installed package: `code-review-graph 2.3.6`.
+
+## Not Performed
+
+- No `code-review-graph install` platform configuration command was run.
+- No MCP server was started.
+- No daemon or watch service was started.
+- No VS Code extension dependencies were installed.
+- No Prompt Studio feature was created or changed.
+
+## Next Safe Setup Step
+
+When platform wiring is explicitly desired, run a targeted dry run first:
+
+```bash
+code-review-graph install --platform codex --dry-run
+code-review-graph install --platform claude-code --dry-run
+```
