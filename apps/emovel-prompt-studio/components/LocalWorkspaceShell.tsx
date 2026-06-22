@@ -60,6 +60,15 @@ type PublishAsset = {
   distributionChannels: string[];
 };
 
+type ProjectBrief = {
+  productType?: string;
+  targetAudience?: string;
+  platform?: string;
+  tone?: string;
+  launchGoal?: string;
+  pricePoint?: string;
+};
+
 type ReviewMetricStatus = "Weak" | "Acceptable" | "Strong";
 
 type ReviewMetric = {
@@ -108,6 +117,7 @@ type LocalProject = {
   id: string;
   title: string;
   prompt: string;
+  brief?: ProjectBrief;
   createdAt: string;
   lastUpdatedAt?: string;
   status: LocalProjectStatus;
@@ -217,6 +227,10 @@ function inferAudience(prompt: string) {
   if (lower.includes("saas")) return "B2B teams validating a new product workflow";
   if (lower.includes("creator") || lower.includes("content")) return "creators who need a repeatable publishing engine";
   return "builders who need polished product assets without a long production cycle";
+}
+
+function briefValue(value: string | undefined, fallback: string) {
+  return value?.trim() || fallback;
 }
 
 function clampScore(value: number) {
@@ -399,16 +413,20 @@ function generateReview(assets: Omit<GeneratedAssets, "review">): ReviewAsset {
   };
 }
 
-function generateAssets(prompt: string, title: string): GeneratedAssets {
-  const concept = stripPromptCommand(prompt);
-  const market = inferMarket(prompt);
-  const audience = inferAudience(prompt);
+function generateAssets(prompt: string, title: string, brief?: ProjectBrief): GeneratedAssets {
+  const concept = briefValue(brief?.productType, stripPromptCommand(prompt));
+  const market = briefValue(brief?.productType, inferMarket(prompt));
+  const audience = briefValue(brief?.targetAudience, inferAudience(prompt));
+  const platform = briefValue(brief?.platform, "web workspace");
+  const tone = briefValue(brief?.tone, "premium, clear, and decisive");
+  const launchGoal = briefValue(brief?.launchGoal, "turn the idea into publish-ready launch assets");
+  const pricePoint = briefValue(brief?.pricePoint, "pilot price with premium upgrade");
   const offerName = `${title.replace(/\.$/, "")} Launch System`;
   const gumroadListing = `# ${offerName}
 
 Turn "${concept}" into a complete launch workspace.
 
-This package gives ${audience} a ready-to-use product command center with strategy, offer, copy, UX, design, build, and publish assets generated locally from one prompt.
+This package gives ${audience} a ready-to-use ${platform} command center with strategy, offer, copy, UX, design, build, and publish assets generated locally from one prompt.
 
 What's included:
 - Strategy, positioning, and opportunity map
@@ -417,6 +435,9 @@ What's included:
 - Build plan and publish-ready launch assets
 
 Best for: ${audience}.
+Tone: ${tone}.
+Launch goal: ${launchGoal}.
+Monetization: ${pricePoint}.
 
 CTA: Get the launch workspace`;
   const socialPosts = [
@@ -424,7 +445,7 @@ CTA: Get the launch workspace`;
     `Most ideas stall between "interesting" and "shipped." ${offerName} turns the messy middle into a structured launch system.`,
     `New workflow: write the outcome, open the workspace, review Strategy to Publish, then export the pack. No API calls required.`,
     `The best product tools reduce decisions. This one gives ${audience} the next asset, the next action, and the launch checklist.`,
-    `Behind the scenes: ${market} positioning, offer architecture, landing copy, UX structure, visual direction, build map, publish plan.`,
+    `Behind the scenes: ${market} positioning, ${platform} UX, ${tone} copy, offer architecture, build map, publish plan.`,
     `If you have a prompt but not a launch plan, this workspace turns it into something you can actually ship.`,
     `Launching soon: ${offerName}. Built for ${audience} who want polished product assets without a long production cycle.`,
   ];
@@ -434,9 +455,9 @@ Hey,
 
 I just finished a local-first launch workspace for ${concept}.
 
-It turns one prompt into the assets you normally have to assemble across separate docs: strategy, offer, copy, UX, design direction, build plan, and publish prep.
+It turns one prompt into the assets you normally have to assemble across separate docs: strategy, offer, copy, ${platform} UX, design direction, build plan, and publish prep.
 
-The goal is simple: help ${audience} move from idea to launch-ready package faster, without waiting on manual planning cycles.
+The goal is simple: help ${audience} ${launchGoal} faster, without waiting on manual planning cycles.
 
 Inside you get:
 - A strategic positioning brief
@@ -459,7 +480,7 @@ CTA: Get the launch workspace`;
   ];
   const nextAppBrief = `Build a premium Next.js application for ${concept}.
 
-The app should feel like a dark luxury AI command interface for ${audience}. The primary user journey is: land on the homepage, write a prompt, generate a local workspace, review structured assets, then export builder and publish packs.
+The app should feel like a ${tone} ${platform} experience for ${audience}. The primary user journey is: land on the homepage, understand the offer, complete the primary action, then move toward ${launchGoal}.
 
 Do not add backend services or API calls. Keep all generated project data in browser localStorage.`;
   const routeStructure = [
@@ -515,39 +536,40 @@ Acceptance:
   const assetsWithoutReview: Omit<GeneratedAssets, "review"> = {
     strategy: {
       audience,
-      problem: `${sentenceCase(audience)} often have a clear idea but lose momentum turning it into strategy, UX, copy, build direction, and launch material.`,
-      positioning: `${concept} is positioned as a premium ${market} command workspace that converts one prompt into coordinated execution assets.`,
-      opportunity: `Own the gap between raw AI prompting and finished launch operations by making the workspace feel decisive, visual, and ready to act on.`,
+      problem: `${sentenceCase(audience)} need a ${tone} way to turn ${concept} into a specific ${platform} experience without losing momentum across strategy, UX, copy, build direction, and launch material.`,
+      positioning: `${concept} is positioned as a premium ${market} for ${audience}, built around ${platform} execution and the goal to ${launchGoal}.`,
+      opportunity: `Own the gap between raw AI prompting and finished launch operations by making the ${platform} feel decisive, visual, and ready to monetize through ${pricePoint}.`,
     },
     offer: {
       offerName,
-      pricing: "Pilot price: $149 for the generated launch workspace; premium package: $499 with implementation review.",
+      pricing: pricePoint,
       deliverables: [
-        "Strategy brief with audience, problem, positioning, and opportunity",
-        "Offer architecture with pricing, deliverables, and guarantee",
-        "Landing copy, UX structure, design direction, build map, and publish plan",
+        `Strategy brief for ${audience} with problem, positioning, and opportunity`,
+        `Offer architecture for ${pricePoint} with deliverables and guarantee`,
+        `${platform} copy, UX structure, ${tone} design direction, build map, and publish plan`,
       ],
-      guarantee: "If the workspace does not produce a clear launch direction in 30 minutes, revise the prompt and regenerate the package at no extra cost.",
+      guarantee: `If the workspace does not clarify how to ${launchGoal} in 30 minutes, revise the prompt or brief and regenerate the package at no extra cost.`,
     },
     copy: {
-      headline: `${concept} from one prompt.`,
-      subheadline: `EMOVEL turns your idea into a structured ${market} workspace with strategy, offer, copy, UX, design, build, and publish assets.`,
+      headline: `${concept} for ${audience}.`,
+      subheadline: `EMOVEL turns one prompt into a ${tone} ${platform} workspace with strategy, offer, copy, UX, design, build, and publish assets.`,
       cta: "Generate Workspace",
-      offerDescription: `A local-first launch workspace for ${audience}, designed to move from idea to premium product entry point without waiting on AI APIs or manual planning docs.`,
+      offerDescription: `A local-first launch workspace for ${audience}, designed to ${launchGoal} with ${platform} assets, ${tone} messaging, and ${pricePoint} monetization logic.`,
     },
     ux: {
       pageStructure: [
-        "Hero with outcome headline and single prompt composer",
+        `Hero that explains ${concept} for ${audience}`,
+        `${platform} flow that drives users toward ${launchGoal}`,
         "Generated workspace with left navigation, focused asset view, and project inspector",
-        "Publish-ready section with checklist and distribution plan",
+        `Publish-ready section with checklist and ${pricePoint} monetization path`,
       ],
-      sections: ["Hero", "Prompt composer", "Workspace shell", "Asset preview", "Project inspector", "Publish plan"],
-      hierarchy: "Lead with the primary prompt action, then use the workspace route as the core command surface where each asset is reviewed one at a time.",
+      sections: ["Hero", "Audience proof", "Offer", "Primary action", "Workspace shell", "Asset preview", "Publish plan"],
+      hierarchy: `Lead with the ${launchGoal} outcome, make ${audience} feel seen, then use the ${platform} route as the core surface where each asset is reviewed one at a time.`,
     },
     design: {
       colorPalette: ["#05020A base", "#120A20 panels", "#8B5CF6 primary violet", "#A855F7 glow accent", "rgba(255,255,255,0.72) text"],
-      typography: "Use dense, premium sans-serif hierarchy: oversized confident headings, small uppercase metadata, and readable 14-16px body text.",
-      visualDirection: "Dark luxury AI OS with Linear clarity, Vercel spacing discipline, Raycast command density, glass borders, and cinematic violet spotlighting.",
+      typography: `Use ${tone} sans-serif hierarchy: confident headings, small uppercase metadata, and readable 14-16px body text for ${audience}.`,
+      visualDirection: `Dark luxury AI OS adapted to ${platform}: Linear clarity, Vercel spacing discipline, Raycast command density, glass borders, and cinematic violet spotlighting.`,
     },
     build: {
       nextAppBrief,
@@ -608,7 +630,7 @@ function projectWithAssets(project: LocalProject): LocalProject {
   }
 
   if (project.assets) {
-    const generated = generateAssets(project.prompt, project.title);
+    const generated = generateAssets(project.prompt, project.title, project.brief);
     return {
       ...project,
       assets: {
@@ -642,7 +664,7 @@ function projectWithAssets(project: LocalProject): LocalProject {
 
   return {
     ...project,
-    assets: generateAssets(project.prompt, project.title),
+    assets: generateAssets(project.prompt, project.title, project.brief),
   };
 }
 
@@ -650,6 +672,12 @@ function overviewAsset(project: LocalProject) {
   return {
     "Project title": project.title,
     Status: project.status,
+    "Product type": project.brief?.productType || "Inferred from prompt",
+    "Target audience": project.brief?.targetAudience || "Inferred from prompt",
+    Platform: project.brief?.platform || "Inferred from prompt",
+    Tone: project.brief?.tone || "Inferred from prompt",
+    "Launch goal": project.brief?.launchGoal || "Inferred from prompt",
+    "Price point": project.brief?.pricePoint || "Inferred from prompt",
     "Generated assets": "Strategy, Offer, Copy, UX, Design, Build, Publish",
     "Source prompt": project.prompt,
   };
@@ -825,6 +853,7 @@ function exportFiles(project: LocalProject) {
       id: project.id,
       title: project.title,
       prompt: project.prompt,
+      brief: project.brief,
       createdAt: project.createdAt,
       lastUpdatedAt: project.lastUpdatedAt,
       status: project.status,
@@ -879,6 +908,7 @@ function publishPackFiles(project: LocalProject) {
             id: project.id,
             title: project.title,
             prompt: project.prompt,
+            brief: project.brief,
             createdAt: project.createdAt,
             lastUpdatedAt: project.lastUpdatedAt,
             status: project.status,
@@ -930,6 +960,7 @@ function builderPackFiles(project: LocalProject) {
             id: project.id,
             title: project.title,
             prompt: project.prompt,
+            brief: project.brief,
             createdAt: project.createdAt,
             lastUpdatedAt: project.lastUpdatedAt,
             status: project.status,
@@ -1889,6 +1920,31 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 {project.prompt}
               </p>
             </div>
+
+            {project.brief ? (
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/32">
+                  Refined brief
+                </p>
+                <div className="mt-2 grid gap-2 rounded-2xl border border-white/[0.06] bg-black/18 p-4">
+                  {[
+                    ["Product", project.brief.productType],
+                    ["Audience", project.brief.targetAudience],
+                    ["Platform", project.brief.platform],
+                    ["Tone", project.brief.tone],
+                    ["Goal", project.brief.launchGoal],
+                    ["Price", project.brief.pricePoint],
+                  ].map(([label, value]) => (
+                    <div key={label} className="grid gap-0.5">
+                      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-[#A855F7]/60">
+                        {label}
+                      </span>
+                      <span className="text-xs leading-5 text-white/54">{value || "Inferred"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="rounded-2xl border border-[#A855F7]/18 bg-[#8B5CF6]/10 p-4">
               <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-violet-200/70">

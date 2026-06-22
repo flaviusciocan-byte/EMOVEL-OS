@@ -21,15 +21,96 @@ type LocalProject = {
   id: string;
   title: string;
   prompt: string;
+  brief: ProjectBrief;
   createdAt: string;
   status: "Generating" | "Ready";
 };
+
+type ProjectBrief = {
+  productType: string;
+  targetAudience: string;
+  platform: string;
+  tone: string;
+  launchGoal: string;
+  pricePoint: string;
+};
+
+const emptyBrief: ProjectBrief = {
+  productType: "",
+  targetAudience: "",
+  platform: "",
+  tone: "",
+  launchGoal: "",
+  pricePoint: "",
+};
+
+const refineFields: { key: keyof ProjectBrief; label: string; placeholder: string }[] = [
+  { key: "productType", label: "What are you building?", placeholder: "AI content OS, agency site, SaaS dashboard..." },
+  { key: "targetAudience", label: "Who is it for?", placeholder: "Solo founders, luxury agents, SaaS teams..." },
+  { key: "platform", label: "What platform?", placeholder: "Web app, Gumroad, landing page, Instagram..." },
+  { key: "tone", label: "What tone?", placeholder: "Premium, direct, cinematic, playful..." },
+  { key: "launchGoal", label: "What should it achieve?", placeholder: "Sell preorders, capture leads, launch a paid product..." },
+  { key: "pricePoint", label: "Price point / monetization", placeholder: "$49 prompt pack, $499 service audit, free waitlist..." },
+];
 
 function titleFromPrompt(value: string) {
   const clean = value.trim().replace(/\s+/g, " ");
   if (!clean) return "Untitled Workspace";
   const withoutCommand = clean.replace(/^(create|build|design|launch|generate)\s+/i, "");
   return withoutCommand.charAt(0).toUpperCase() + withoutCommand.slice(1, 72);
+}
+
+function inferBriefFromPrompt(prompt: string): ProjectBrief {
+  const lower = prompt.toLowerCase();
+  const productType =
+    lower.includes("dashboard") ? "SaaS dashboard" :
+    lower.includes("gumroad") || lower.includes("prompt pack") ? "Digital product" :
+    lower.includes("agency") ? "Agency landing page" :
+    lower.includes("content") || lower.includes("instagram") ? "Content operating system" :
+    lower.includes("real estate") ? "Luxury real estate website" :
+    lower.includes("site") || lower.includes("landing") ? "Conversion website" :
+    "Launch workspace";
+  const targetAudience =
+    lower.includes("founder") ? "Solo founders and lean operators" :
+    lower.includes("real estate") ? "Luxury real estate buyers and sellers" :
+    lower.includes("saas") ? "SaaS teams and product operators" :
+    lower.includes("agency") ? "High-trust service buyers" :
+    "Builders preparing a product launch";
+  const platform =
+    lower.includes("instagram") ? "Instagram" :
+    lower.includes("gumroad") ? "Gumroad" :
+    lower.includes("dashboard") || lower.includes("saas") ? "Web app" :
+    lower.includes("site") || lower.includes("landing") ? "Website" :
+    "Web workspace";
+  const tone =
+    lower.includes("luxury") ? "Luxury and polished" :
+    lower.includes("agency") ? "Premium and authoritative" :
+    lower.includes("founder") ? "Clear and founder-friendly" :
+    "Premium, clear, and decisive";
+  const pricePoint =
+    lower.includes("gumroad") || lower.includes("prompt pack") ? "$29-$99 digital product" :
+    lower.includes("agency") ? "$2k-$10k service offer" :
+    lower.includes("saas") ? "Free trial or paid SaaS plan" :
+    "Pilot price with premium upgrade";
+  const launchGoal =
+    lower.includes("waitlist") ? "Capture qualified waitlist leads" :
+    lower.includes("gumroad") || lower.includes("prompt pack") ? "Sell a self-serve digital product" :
+    lower.includes("dashboard") ? "Guide users to activation" :
+    "Turn the idea into publish-ready launch assets";
+
+  return { productType, targetAudience, platform, tone, launchGoal, pricePoint };
+}
+
+function mergeBrief(prompt: string, brief: ProjectBrief) {
+  const inferred = inferBriefFromPrompt(prompt);
+  return {
+    productType: brief.productType.trim() || inferred.productType,
+    targetAudience: brief.targetAudience.trim() || inferred.targetAudience,
+    platform: brief.platform.trim() || inferred.platform,
+    tone: brief.tone.trim() || inferred.tone,
+    launchGoal: brief.launchGoal.trim() || inferred.launchGoal,
+    pricePoint: brief.pricePoint.trim() || inferred.pricePoint,
+  };
 }
 
 function createProjectId() {
@@ -87,6 +168,8 @@ type Stage = "idle" | "generating";
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState("");
+  const [brief, setBrief] = useState<ProjectBrief>(emptyBrief);
+  const [refineOpen, setRefineOpen] = useState(false);
   const [stage, setStage] = useState<Stage>("idle");
   const router = useRouter();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -94,10 +177,12 @@ export default function HomePage() {
   const handleGenerate = useCallback(() => {
     if (stage !== "idle") return;
     const text = prompt.trim() || "Create a premium launch workspace for a new EMOVEL product.";
+    const refinedBrief = mergeBrief(text, brief);
     const project: LocalProject = {
       id: createProjectId(),
       title: titleFromPrompt(text),
       prompt: text,
+      brief: refinedBrief,
       createdAt: new Date().toISOString(),
       status: "Ready",
     };
@@ -106,7 +191,7 @@ export default function HomePage() {
     sessionStorage.setItem("emovel-pending-prompt", text);
     setStage("generating");
     timerRef.current = setTimeout(() => router.push(`/workspace/${project.id}`), 900);
-  }, [prompt, router, stage]);
+  }, [brief, prompt, router, stage]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -200,9 +285,17 @@ export default function HomePage() {
                   <button
                     type="button"
                     aria-label="Add context"
+                    onClick={() => setRefineOpen((value) => !value)}
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.055] text-white/78 transition hover:border-[#A855F7]/45 hover:bg-[#8B5CF6]/18 hover:text-white"
                   >
                     <PlusIcon />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRefineOpen((value) => !value)}
+                    className="rounded-full border border-white/[0.09] bg-white/[0.045] px-3.5 py-2 text-sm font-semibold text-white/68 transition hover:border-[#A855F7]/45 hover:bg-[#8B5CF6]/14 hover:text-white"
+                  >
+                    Refine Brief
                   </button>
                   <span className="rounded-full border border-[#8B5CF6]/35 bg-[#8B5CF6]/14 px-4 py-2 text-sm font-semibold text-violet-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                     Workspace
@@ -232,6 +325,49 @@ export default function HomePage() {
                   </span>
                 </button>
               </div>
+
+              {refineOpen ? (
+                <div className="border-t border-white/[0.07] bg-black/10 px-4 py-4 md:px-5">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/80">
+                        Refine Brief
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-white/42">
+                        Optional context. Empty fields are inferred from your prompt.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setBrief(emptyBrief)}
+                      className="rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-bold text-white/48 transition hover:text-white"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {refineFields.map((field) => (
+                      <label key={field.key} className="grid gap-1.5">
+                        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-white/34">
+                          {field.label}
+                        </span>
+                        <input
+                          value={brief[field.key]}
+                          onChange={(event) =>
+                            setBrief((current) => ({
+                              ...current,
+                              [field.key]: event.target.value,
+                            }))
+                          }
+                          placeholder={field.placeholder}
+                          className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/24 focus:border-[#A855F7]/45 focus:bg-[#8B5CF6]/10"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </section>
