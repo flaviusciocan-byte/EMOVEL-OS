@@ -55,3 +55,33 @@ EMOVEL-OS is acting as the control center for external production tools. The req
 - No visual repo install was run.
 - No global package install was run.
 - No paid API or MCP connection was claimed.
+
+---
+
+## Sprint Update: code-review-graph — 2026-06-22
+
+### New Tool Added to Registry
+
+| Field | Value |
+|---|---|
+| Tool | `code-review-graph-main` |
+| Expected path | `C:\EMOVEL\tools\code-review-graph-main` |
+| Status | `NOT_FOUND` |
+| Category | `BUILDER_LAYER` (provisional) |
+| Installed | NO |
+| Integration type confirmed | NO |
+
+### Impact on Overall Production Readiness
+
+No impact on existing components. The tool was registered with `NOT_FOUND` to track it. All previously listed components retain their status unchanged.
+
+### Unblock Requirement
+
+The ZIP or repository source must be located and extracted to `C:\EMOVEL\tools\code-review-graph-main\` before any integration work is possible.
+
+### What Was Not Claimed
+
+- No MCP endpoint was registered.
+- No CLI was wired into Prompt Studio.
+- No install was run.
+- No capabilities were assumed or invented.

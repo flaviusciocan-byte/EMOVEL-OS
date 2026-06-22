@@ -74,3 +74,45 @@ External tool root:
 - No visual repo dependency install was run.
 - No Quant UX install was run.
 - No global package was installed.
+
+---
+
+## Sprint: code-review-graph Integration — 2026-06-22
+
+### Tool
+
+`code-review-graph-main`
+
+### Expected path
+
+`C:\EMOVEL\tools\code-review-graph-main`
+
+### Result
+
+**BLOCKED — NOT_FOUND**
+
+The directory does not exist on this machine. A full drive search at maxdepth 5 returned no results for any path containing `code-review-graph`. The tool was not present in:
+
+- `C:\EMOVEL\tools\`
+- `C:\Users\flavi\Desktop\`
+- `C:\Users\flavi\Downloads\`
+- Any other searched location
+
+### Actions Taken
+
+| Action | Result |
+|---|---|
+| Directory existence check | `NOT_FOUND` |
+| Drive-wide search | No match |
+| README read | `BLOCKED` |
+| Integration type detection | `BLOCKED` |
+| Install | `NOT RUN` |
+| MCP registration | `NOT DONE` |
+| Claude Code skill registration | `NOT DONE` |
+| VS Code extension check | `BLOCKED` |
+| `config/tools.json` updated | YES — status `NOT_FOUND` |
+| `docs/CODE_REVIEW_GRAPH_INTEGRATION.md` created | YES |
+
+### Nothing Was Invented
+
+No capabilities, install results, MCP endpoints, CLI commands, or integration points were fabricated. All fields in `tools.json` for this tool reflect the real state: directory absent, all manifest flags null, status `NOT_FOUND`.
