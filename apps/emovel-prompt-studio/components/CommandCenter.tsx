@@ -2,15 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  migrateProjectToSchemaV1,
+  type ProjectSchemaV1,
+} from "../lib/project-schema";
 
-type LocalProject = {
-  id: string;
-  title: string;
-  prompt: string;
-  createdAt: string;
-  status: "Generating" | "Ready";
-  assets?: Record<string, unknown>;
-};
+type LocalProject = ProjectSchemaV1;
 
 type CommandCenterProps = {
   open: boolean;
@@ -41,9 +38,14 @@ function readProjects() {
   if (!stored) return [];
 
   try {
-    return (JSON.parse(stored) as LocalProject[]).sort(
+    const projects = (JSON.parse(stored) as unknown[])
+      .map((item) => migrateProjectToSchemaV1(item))
+      .filter((item): item is LocalProject => Boolean(item))
+      .sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+    return projects;
   } catch {
     return [];
   }
@@ -95,7 +97,17 @@ export function CommandCenter({ open, onOpenChange }: CommandCenterProps) {
       id: createProjectId(),
       title: `${project.title} Copy`,
       createdAt: new Date().toISOString(),
+      lastUpdatedAt: new Date().toISOString(),
       status: "Ready",
+      versions: [
+        ...project.versions,
+        {
+          id: `${project.id}-command-copy-${Date.now().toString(36)}`,
+          label: "Duplicated project",
+          createdAt: new Date().toISOString(),
+          reason: "Project duplicated from Command Center",
+        },
+      ],
     };
     const nextProjects = [duplicate, ...projects];
     setProjects(nextProjects);

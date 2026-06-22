@@ -2,17 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  migrateProjectToSchemaV1,
+  type ProjectSchemaV1,
+} from "../../lib/project-schema";
 
-type LocalProjectStatus = "Generating" | "Ready";
-
-type LocalProject = {
-  id: string;
-  title: string;
-  prompt: string;
-  createdAt: string;
-  status: LocalProjectStatus;
-  assets?: Record<string, unknown>;
-};
+type LocalProject = ProjectSchemaV1;
 
 type ReadinessStatus = "Draft" | "Needs Work" | "Ready to Build" | "Ready to Launch";
 type FilterValue = "All" | "Needs Work" | "Ready to Build" | "Ready to Launch";
@@ -151,9 +146,14 @@ function readProjects() {
   if (!stored) return [];
 
   try {
-    return (JSON.parse(stored) as LocalProject[]).sort(
+    const projects = (JSON.parse(stored) as unknown[])
+      .map((item) => migrateProjectToSchemaV1(item))
+      .filter((item): item is LocalProject => Boolean(item))
+      .sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+    return projects;
   } catch {
     return [];
   }
@@ -193,7 +193,17 @@ export default function ProjectsPage() {
       id: createProjectId(),
       title: `${project.title} Copy`,
       createdAt: new Date().toISOString(),
+      lastUpdatedAt: new Date().toISOString(),
       status: "Ready",
+      versions: [
+        ...project.versions,
+        {
+          id: `${project.id}-duplicate-${Date.now().toString(36)}`,
+          label: "Duplicated project",
+          createdAt: new Date().toISOString(),
+          reason: "Project duplicated from library",
+        },
+      ],
     };
     const nextProjects = [duplicate, ...projects];
     setProjects(nextProjects);

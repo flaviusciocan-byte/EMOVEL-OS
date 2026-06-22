@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  createProjectSchemaV1,
+  emptyRefinedBrief,
+  migrateProjectToSchemaV1,
+  type ProjectSchemaV1,
+  type RefinedBrief,
+} from "../lib/project-schema";
 
 const examples = [
   "Launch a premium AI agency site",
@@ -17,34 +24,7 @@ const previewCards = [
   { label: "Publish", className: "-right-8 bottom-7 rotate-[-6deg]" },
 ];
 
-type LocalProject = {
-  id: string;
-  title: string;
-  prompt: string;
-  brief: ProjectBrief;
-  createdAt: string;
-  status: "Generating" | "Ready";
-};
-
-type ProjectBrief = {
-  productType: string;
-  targetAudience: string;
-  platform: string;
-  tone: string;
-  launchGoal: string;
-  pricePoint: string;
-};
-
-const emptyBrief: ProjectBrief = {
-  productType: "",
-  targetAudience: "",
-  platform: "",
-  tone: "",
-  launchGoal: "",
-  pricePoint: "",
-};
-
-const refineFields: { key: keyof ProjectBrief; label: string; placeholder: string }[] = [
+const refineFields: { key: keyof RefinedBrief; label: string; placeholder: string }[] = [
   { key: "productType", label: "What are you building?", placeholder: "AI content OS, agency site, SaaS dashboard..." },
   { key: "targetAudience", label: "Who is it for?", placeholder: "Solo founders, luxury agents, SaaS teams..." },
   { key: "platform", label: "What platform?", placeholder: "Web app, Gumroad, landing page, Instagram..." },
@@ -60,7 +40,7 @@ function titleFromPrompt(value: string) {
   return withoutCommand.charAt(0).toUpperCase() + withoutCommand.slice(1, 72);
 }
 
-function inferBriefFromPrompt(prompt: string): ProjectBrief {
+function inferBriefFromPrompt(prompt: string): RefinedBrief {
   const lower = prompt.toLowerCase();
   const productType =
     lower.includes("dashboard") ? "SaaS dashboard" :
@@ -101,7 +81,7 @@ function inferBriefFromPrompt(prompt: string): ProjectBrief {
   return { productType, targetAudience, platform, tone, launchGoal, pricePoint };
 }
 
-function mergeBrief(prompt: string, brief: ProjectBrief) {
+function mergeBrief(prompt: string, brief: RefinedBrief) {
   const inferred = inferBriefFromPrompt(prompt);
   return {
     productType: brief.productType.trim() || inferred.productType,
@@ -120,10 +100,14 @@ function createProjectId() {
   return `workspace-${Date.now().toString(36)}`;
 }
 
-function persistLocalProject(project: LocalProject) {
+function persistLocalProject(project: ProjectSchemaV1) {
   const storageKey = "emovel-projects";
   const existing = localStorage.getItem(storageKey);
-  const projects = existing ? (JSON.parse(existing) as LocalProject[]) : [];
+  const projects = existing
+    ? (JSON.parse(existing) as unknown[])
+        .map((item) => migrateProjectToSchemaV1(item))
+        .filter((item): item is ProjectSchemaV1 => Boolean(item))
+    : [];
   localStorage.setItem(storageKey, JSON.stringify([project, ...projects]));
   localStorage.setItem(`emovel-project:${project.id}`, JSON.stringify(project));
 }
@@ -168,7 +152,7 @@ type Stage = "idle" | "generating";
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState("");
-  const [brief, setBrief] = useState<ProjectBrief>(emptyBrief);
+  const [brief, setBrief] = useState<RefinedBrief>(emptyRefinedBrief);
   const [refineOpen, setRefineOpen] = useState(false);
   const [stage, setStage] = useState<Stage>("idle");
   const router = useRouter();
@@ -178,14 +162,14 @@ export default function HomePage() {
     if (stage !== "idle") return;
     const text = prompt.trim() || "Create a premium launch workspace for a new EMOVEL product.";
     const refinedBrief = mergeBrief(text, brief);
-    const project: LocalProject = {
+    const project = createProjectSchemaV1({
       id: createProjectId(),
       title: titleFromPrompt(text),
       prompt: text,
-      brief: refinedBrief,
+      refinedBrief,
       createdAt: new Date().toISOString(),
       status: "Ready",
-    };
+    });
 
     persistLocalProject(project);
     sessionStorage.setItem("emovel-pending-prompt", text);
@@ -339,7 +323,7 @@ export default function HomePage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setBrief(emptyBrief)}
+                      onClick={() => setBrief(emptyRefinedBrief)}
                       className="rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-bold text-white/48 transition hover:text-white"
                     >
                       Clear

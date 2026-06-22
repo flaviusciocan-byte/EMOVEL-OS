@@ -2,127 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  migrateProjectToSchemaV1,
+  type ProjectAssets,
+  type ProjectExportRecord,
+  type ProjectSchemaV1,
+  type RefinedBrief,
+  type ReviewAsset,
+  type ReviewExplanation,
+  type ReviewMetric,
+  type ReviewMetricStatus,
+} from "../lib/project-schema";
 
-type LocalProjectStatus = "Generating" | "Ready";
-
-type StrategyAsset = {
-  audience: string;
-  problem: string;
-  positioning: string;
-  opportunity: string;
-};
-
-type OfferAsset = {
-  offerName: string;
-  pricing: string;
-  deliverables: string[];
-  guarantee: string;
-};
-
-type CopyAsset = {
-  headline: string;
-  subheadline: string;
-  cta: string;
-  offerDescription: string;
-};
-
-type UXAsset = {
-  pageStructure: string[];
-  sections: string[];
-  hierarchy: string;
-};
-
-type DesignAsset = {
-  colorPalette: string[];
-  typography: string;
-  visualDirection: string;
-};
-
-type BuildAsset = {
-  nextAppBrief: string;
-  routeStructure: string[];
-  componentHierarchy: string[];
-  tailwindDesignRules: string[];
-  gptPilotPrompt: string;
-  acceptanceChecklist: string[];
-  stack: string[];
-  pages: string[];
-  components: string[];
-};
-
-type PublishAsset = {
-  gumroadListing: string;
-  socialPosts: string[];
-  emailLaunchCopy: string;
-  finalLaunchChecklist: string[];
-  launchChecklist: string[];
-  contentPlan: string[];
-  distributionChannels: string[];
-};
-
-type ProjectBrief = {
-  productType?: string;
-  targetAudience?: string;
-  platform?: string;
-  tone?: string;
-  launchGoal?: string;
-  pricePoint?: string;
-};
-
-type ReviewMetricStatus = "Weak" | "Acceptable" | "Strong";
-
-type ReviewMetric = {
-  label: string;
-  score: number;
-  status: ReviewMetricStatus;
-  whyThisScore: string;
-  whatImprovesIt: string;
-  missingElements: string[];
-  completedElements: string[];
-  improvementNote: string;
-};
-
-type ReviewExplanation = {
-  score: number;
-  status: ReviewMetricStatus;
-  whyThisScore: string;
-  whatImprovesIt: string;
-  missingElements: string[];
-  completedElements: string[];
-};
-
-type ReviewAsset = {
-  metrics: ReviewMetric[];
-  productReadiness: number;
-  buildReadiness: number;
-  launchReadiness: number;
-  productReadinessExplanation: ReviewExplanation;
-  buildReadinessExplanation: ReviewExplanation;
-  launchReadinessExplanation: ReviewExplanation;
-  summary: string;
-};
-
-type GeneratedAssets = {
-  strategy: StrategyAsset;
-  offer: OfferAsset;
-  copy: CopyAsset;
-  ux: UXAsset;
-  design: DesignAsset;
-  build: BuildAsset;
-  publish: PublishAsset;
-  review: ReviewAsset;
-};
-
-type LocalProject = {
-  id: string;
-  title: string;
-  prompt: string;
-  brief?: ProjectBrief;
-  createdAt: string;
-  lastUpdatedAt?: string;
-  status: LocalProjectStatus;
-  assets?: GeneratedAssets;
-};
+type GeneratedAssets = ProjectAssets;
+type LocalProject = ProjectSchemaV1;
+type ProjectBrief = RefinedBrief;
 
 type WorkspaceSection = {
   id: "overview" | keyof GeneratedAssets;
@@ -612,15 +506,18 @@ function projectWithAssets(project: LocalProject): LocalProject {
   if (
     project.assets &&
     "review" in project.assets &&
+    project.assets.review &&
     "productReadinessExplanation" in project.assets.review &&
     "buildReadinessExplanation" in project.assets.review &&
     "launchReadinessExplanation" in project.assets.review &&
+    project.assets.build &&
     "nextAppBrief" in project.assets.build &&
     "routeStructure" in project.assets.build &&
     "componentHierarchy" in project.assets.build &&
     "tailwindDesignRules" in project.assets.build &&
     "gptPilotPrompt" in project.assets.build &&
     "acceptanceChecklist" in project.assets.build &&
+    project.assets.publish &&
     "gumroadListing" in project.assets.publish &&
     "socialPosts" in project.assets.publish &&
     "emailLaunchCopy" in project.assets.publish &&
@@ -630,7 +527,7 @@ function projectWithAssets(project: LocalProject): LocalProject {
   }
 
   if (project.assets) {
-    const generated = generateAssets(project.prompt, project.title, project.brief);
+    const generated = generateAssets(project.prompt, project.title, project.refinedBrief);
     return {
       ...project,
       assets: {
@@ -664,7 +561,7 @@ function projectWithAssets(project: LocalProject): LocalProject {
 
   return {
     ...project,
-    assets: generateAssets(project.prompt, project.title, project.brief),
+    assets: generateAssets(project.prompt, project.title, project.refinedBrief),
   };
 }
 
@@ -672,12 +569,12 @@ function overviewAsset(project: LocalProject) {
   return {
     "Project title": project.title,
     Status: project.status,
-    "Product type": project.brief?.productType || "Inferred from prompt",
-    "Target audience": project.brief?.targetAudience || "Inferred from prompt",
-    Platform: project.brief?.platform || "Inferred from prompt",
-    Tone: project.brief?.tone || "Inferred from prompt",
-    "Launch goal": project.brief?.launchGoal || "Inferred from prompt",
-    "Price point": project.brief?.pricePoint || "Inferred from prompt",
+    "Product type": project.refinedBrief.productType || "Inferred from prompt",
+    "Target audience": project.refinedBrief.targetAudience || "Inferred from prompt",
+    Platform: project.refinedBrief.platform || "Inferred from prompt",
+    Tone: project.refinedBrief.tone || "Inferred from prompt",
+    "Launch goal": project.refinedBrief.launchGoal || "Inferred from prompt",
+    "Price point": project.refinedBrief.pricePoint || "Inferred from prompt",
     "Generated assets": "Strategy, Offer, Copy, UX, Design, Build, Publish",
     "Source prompt": project.prompt,
   };
@@ -851,12 +748,16 @@ function exportFiles(project: LocalProject) {
   const jsonContent = JSON.stringify(
     {
       id: project.id,
+      schemaVersion: project.schemaVersion,
       title: project.title,
       prompt: project.prompt,
-      brief: project.brief,
+      refinedBrief: project.refinedBrief,
       createdAt: project.createdAt,
       lastUpdatedAt: project.lastUpdatedAt,
       status: project.status,
+      exports: project.exports,
+      versions: project.versions,
+      metadata: project.metadata,
       assets: project.assets,
     },
     null,
@@ -906,12 +807,16 @@ function publishPackFiles(project: LocalProject) {
         {
           project: {
             id: project.id,
+            schemaVersion: project.schemaVersion,
             title: project.title,
             prompt: project.prompt,
-            brief: project.brief,
+            refinedBrief: project.refinedBrief,
             createdAt: project.createdAt,
             lastUpdatedAt: project.lastUpdatedAt,
             status: project.status,
+            exports: project.exports,
+            versions: project.versions,
+            metadata: project.metadata,
           },
           publish,
         },
@@ -958,12 +863,16 @@ function builderPackFiles(project: LocalProject) {
         {
           project: {
             id: project.id,
+            schemaVersion: project.schemaVersion,
             title: project.title,
             prompt: project.prompt,
-            brief: project.brief,
+            refinedBrief: project.refinedBrief,
             createdAt: project.createdAt,
             lastUpdatedAt: project.lastUpdatedAt,
             status: project.status,
+            exports: project.exports,
+            versions: project.versions,
+            metadata: project.metadata,
           },
           build,
         },
@@ -1170,16 +1079,21 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   useEffect(() => {
     const stored = localStorage.getItem(`emovel-project:${id}`);
     if (stored) {
-      const parsed = JSON.parse(stored) as LocalProject;
-      const hydrated = projectWithAssets(parsed);
+      const migrated = migrateProjectToSchemaV1(JSON.parse(stored));
+      if (!migrated) {
+        setLoaded(true);
+        return;
+      }
+      const hydrated = projectWithAssets(migrated);
       setProject(hydrated);
       localStorage.setItem(`emovel-project:${id}`, JSON.stringify(hydrated));
 
       const list = localStorage.getItem("emovel-projects");
       if (list) {
-        const projects = (JSON.parse(list) as LocalProject[]).map((item) =>
-          item.id === hydrated.id ? hydrated : item
-        );
+        const projects = (JSON.parse(list) as unknown[])
+          .map((item) => migrateProjectToSchemaV1(item))
+          .filter((item): item is LocalProject => Boolean(item))
+          .map((item) => (item.id === hydrated.id ? hydrated : item));
         localStorage.setItem("emovel-projects", JSON.stringify(projects));
       }
     }
@@ -1211,9 +1125,10 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
 
     const list = localStorage.getItem("emovel-projects");
     if (list) {
-      const projects = (JSON.parse(list) as LocalProject[]).map((item) =>
-        item.id === nextProject.id ? nextProject : item
-      );
+      const projects = (JSON.parse(list) as unknown[])
+        .map((item) => migrateProjectToSchemaV1(item))
+        .filter((item): item is LocalProject => Boolean(item))
+        .map((item) => (item.id === nextProject.id ? nextProject : item));
       localStorage.setItem("emovel-projects", JSON.stringify(projects));
     }
   }
@@ -1248,6 +1163,24 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     persistProject(nextProject);
   }
 
+  function recordExport(format: ProjectExportRecord["format"], filename: string) {
+    if (!project) return;
+    const now = new Date().toISOString();
+    persistProject({
+      ...project,
+      lastUpdatedAt: now,
+      exports: [
+        ...project.exports,
+        {
+          id: `${project.id}-export-${Date.now().toString(36)}`,
+          format,
+          filename,
+          createdAt: now,
+        },
+      ],
+    });
+  }
+
   async function copySection() {
     if (!project) return;
     await navigator.clipboard.writeText(sectionMarkdown(selectedSection, project));
@@ -1272,8 +1205,10 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     const projectName = slugify(project.title);
 
     if (exportFormat === "markdown") {
+      const filename = `${projectName}.md`;
+      recordExport("markdown", filename);
       downloadBlob(
-        `${projectName}.md`,
+        filename,
         new Blob([combinedMarkdown(project)], { type: "text/markdown;charset=utf-8" })
       );
       return;
@@ -1281,16 +1216,20 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
 
     if (exportFormat === "json") {
       const projectJson = currentExportFiles.find((file) => file.path.endsWith("/project.json"));
+      const filename = `${projectName}.json`;
+      recordExport("json", filename);
       downloadBlob(
-        `${projectName}.json`,
+        filename,
         new Blob([projectJson?.content || "{}"], { type: "application/json;charset=utf-8" })
       );
       return;
     }
 
     const zipBytes = createZip(currentExportFiles);
+    const filename = `${projectName}-export.zip`;
+    recordExport("zip", filename);
     downloadBlob(
-      `${projectName}-export.zip`,
+      filename,
       new Blob([zipBytes], { type: "application/zip" })
     );
   }
@@ -1298,8 +1237,10 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   function downloadPublishPack() {
     if (!project) return;
     const zipBytes = createZip(publishPackFiles(project));
+    const filename = `${slugify(project.title)}-publish-pack.zip`;
+    recordExport("publish-pack", filename);
     downloadBlob(
-      `${slugify(project.title)}-publish-pack.zip`,
+      filename,
       new Blob([zipBytes], { type: "application/zip" })
     );
   }
@@ -1307,8 +1248,10 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   function downloadBuilderPack() {
     if (!project) return;
     const zipBytes = createZip(builderPackFiles(project));
+    const filename = `${slugify(project.title)}-builder-pack.zip`;
+    recordExport("builder-pack", filename);
     downloadBlob(
-      `${slugify(project.title)}-builder-pack.zip`,
+      filename,
       new Blob([zipBytes], { type: "application/zip" })
     );
   }
@@ -1322,8 +1265,10 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
 
   function downloadReviewReport() {
     if (!project) return;
+    const filename = `${slugify(project.title)}-quality-review.md`;
+    recordExport("review-markdown", filename);
     downloadBlob(
-      `${slugify(project.title)}-quality-review.md`,
+      filename,
       new Blob([reviewReportMarkdown(project)], { type: "text/markdown;charset=utf-8" })
     );
   }
@@ -1921,19 +1866,19 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               </p>
             </div>
 
-            {project.brief ? (
+            {project.refinedBrief ? (
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/32">
                   Refined brief
                 </p>
                 <div className="mt-2 grid gap-2 rounded-2xl border border-white/[0.06] bg-black/18 p-4">
                   {[
-                    ["Product", project.brief.productType],
-                    ["Audience", project.brief.targetAudience],
-                    ["Platform", project.brief.platform],
-                    ["Tone", project.brief.tone],
-                    ["Goal", project.brief.launchGoal],
-                    ["Price", project.brief.pricePoint],
+                    ["Product", project.refinedBrief.productType],
+                    ["Audience", project.refinedBrief.targetAudience],
+                    ["Platform", project.refinedBrief.platform],
+                    ["Tone", project.refinedBrief.tone],
+                    ["Goal", project.refinedBrief.launchGoal],
+                    ["Price", project.refinedBrief.pricePoint],
                   ].map(([label, value]) => (
                     <div key={label} className="grid gap-0.5">
                       <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-[#A855F7]/60">
