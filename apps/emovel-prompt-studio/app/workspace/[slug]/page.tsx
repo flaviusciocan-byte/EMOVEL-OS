@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { LocalWorkspaceShell } from "@/components/LocalWorkspaceShell";
 import {
   projectNameFromSlug,
   readActionQueue,
@@ -21,8 +21,8 @@ type WorkspaceSummaryPageProps = {
 
 function readinessBadge(ready: boolean) {
   return ready
-    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-    : "border-line bg-cloud text-slate-700";
+    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+    : "border-white/[0.07] bg-white/[0.03] text-white/40";
 }
 
 export default async function WorkspaceSummaryPage({ params }: WorkspaceSummaryPageProps) {
@@ -38,7 +38,7 @@ export default async function WorkspaceSummaryPage({ params }: WorkspaceSummaryP
     ]);
 
   if (!projectFiles) {
-    notFound();
+    return <LocalWorkspaceShell id={params.slug} />;
   }
 
   const generatedFiles = [
@@ -65,138 +65,142 @@ export default async function WorkspaceSummaryPage({ params }: WorkspaceSummaryP
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-10">
+      {/* Header */}
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-blue">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-violet-400">
             Workspace Summary
           </p>
-          <h1 className="mt-2 text-4xl font-black tracking-[-0.04em]">
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white md:text-4xl">
             {projectNameFromSlug(params.slug)}
           </h1>
-          <p className="mt-3 font-mono text-xs font-bold text-slate-600">
+          <p className="mt-2 font-mono text-[10px] text-white/30">
             projects/generated/{params.slug}/
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link className="rounded-emovel bg-ink px-5 py-3 font-black text-white" href={`/projects/${params.slug}`}>
+          <Link
+            className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-[0_0_18px_rgba(124,58,237,0.35)] transition duration-200 hover:-translate-y-0.5 hover:bg-violet-500"
+            href={`/projects/${params.slug}`}
+          >
             Open Project
           </Link>
           <Link
-            className="rounded-emovel border border-line bg-white px-5 py-3 font-black"
+            className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-5 py-2.5 text-sm font-bold text-white/60 transition duration-200 hover:bg-white/[0.08] hover:text-white/90"
             href={`/builder-workspaces/${params.slug}`}
           >
             Builder Workspace
           </Link>
-          <Link className="rounded-emovel border border-line bg-white px-5 py-3 font-black" href="/execution">
+          <Link
+            className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-5 py-2.5 text-sm font-bold text-white/60 transition duration-200 hover:bg-white/[0.08] hover:text-white/90"
+            href="/execution"
+          >
             Execution Inbox
           </Link>
         </div>
       </div>
 
-      <section className="mb-6 grid gap-4 md:grid-cols-4">
-        <article className="rounded-emovel border border-line bg-white p-5">
-          <p className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-            Generated Files
-          </p>
-          <p className="mt-3 text-4xl font-black tracking-[-0.04em]">{generatedFiles.length}</p>
-        </article>
-        <article className="rounded-emovel border border-line bg-white p-5">
-          <p className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-            Task Count
-          </p>
-          <p className="mt-3 text-4xl font-black tracking-[-0.04em]">{taskCount}</p>
-        </article>
-        <article className="rounded-emovel border border-line bg-white p-5">
-          <p className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-            Builder Readiness
-          </p>
-          <span className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-black ${readinessBadge(builderReady)}`}>
-            {builderReady ? "Ready" : "Needs setup"}
-          </span>
-        </article>
-        <article className="rounded-emovel border border-line bg-white p-5">
-          <p className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-            Publish Readiness
-          </p>
-          <span className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-black ${readinessBadge(publishReady)}`}>
-            {publishReady ? "Prepared" : "Not prepared"}
-          </span>
-        </article>
+      {/* Stat cards row 1 */}
+      <section className="mb-4 grid gap-3 md:grid-cols-4">
+        {[
+          { label: "Generated Files", value: generatedFiles.length },
+          { label: "Task Count", value: taskCount },
+          null,
+          null
+        ].map((item, i) =>
+          item ? (
+            <article
+              key={item.label}
+              className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-sm"
+            >
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-white/35">
+                {item.label}
+              </p>
+              <p className="mt-3 text-4xl font-black tracking-[-0.04em] text-white">{item.value}</p>
+            </article>
+          ) : (
+            <article
+              key={i}
+              className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-sm"
+            >
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-white/35">
+                {i === 2 ? "Builder Readiness" : "Publish Readiness"}
+              </p>
+              <span
+                className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-bold ${readinessBadge(i === 2 ? builderReady : publishReady)}`}
+              >
+                {i === 2
+                  ? builderReady ? "Ready" : "Needs setup"
+                  : publishReady ? "Prepared" : "Not prepared"}
+              </span>
+            </article>
+          )
+        )}
       </section>
 
-      <section className="mb-6 grid gap-4 md:grid-cols-3">
-        <article className="rounded-emovel border border-line bg-white p-5">
-          <p className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-            Publish Package Status
+      {/* Stat cards row 2 */}
+      <section className="mb-4 grid gap-3 md:grid-cols-3">
+        <article className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-sm">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-white/35">
+            Publish Package
           </p>
-          <span
-            className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-black ${readinessBadge(
-              publishPackageReady
-            )}`}
-          >
+          <span className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-bold ${readinessBadge(publishPackageReady)}`}>
             {publishPackageReady ? `${publishPackageCount} files ready` : "Missing"}
           </span>
         </article>
-        <article className="rounded-emovel border border-line bg-white p-5">
-          <p className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+        <article className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-sm">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-white/35">
             Shop Readiness
           </p>
-          <span
-            className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-black ${readinessBadge(
-              shopReady
-            )}`}
-          >
+          <span className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-bold ${readinessBadge(shopReady)}`}>
             {shopStatus || "Not set"}
           </span>
         </article>
-        <article className="rounded-emovel border border-line bg-white p-5">
-          <p className="font-mono text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+        <article className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 backdrop-blur-sm">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-white/35">
             Gumroad Readiness
           </p>
-          <span
-            className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-black ${readinessBadge(
-              gumroadReady
-            )}`}
-          >
+          <span className={`mt-3 inline-flex rounded-full border px-3 py-1 font-mono text-xs font-bold ${readinessBadge(gumroadReady)}`}>
             {gumroadReady ? "Ready for Gumroad" : "Needs review"}
           </span>
         </article>
       </section>
 
-      <section className="mb-6 rounded-emovel border border-line bg-white p-5">
-        <h2 className="text-2xl font-black tracking-[-0.03em]">Project Info</h2>
-        <dl className="mt-4 grid gap-3 text-sm font-bold text-slate-700 md:grid-cols-2">
-          <div>
-            <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">Slug</dt>
-            <dd>{params.slug}</dd>
-          </div>
-          <div>
-            <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">Build status</dt>
-            <dd>{buildStatus || "Draft"}</dd>
-          </div>
-          <div>
-            <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">Shop status</dt>
-            <dd>{shopStatus || "Not set"}</dd>
-          </div>
-          <div>
-            <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">Executor prompts</dt>
-            <dd>{executorPrompts.length}</dd>
-          </div>
+      {/* Project info */}
+      <section className="mb-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 backdrop-blur-sm">
+        <h2 className="mb-4 text-lg font-black tracking-[-0.03em] text-white">Project Info</h2>
+        <dl className="grid gap-4 text-sm md:grid-cols-2">
+          {[
+            { label: "Slug", value: params.slug },
+            { label: "Build status", value: buildStatus || "Draft" },
+            { label: "Shop status", value: shopStatus || "Not set" },
+            { label: "Executor prompts", value: String(executorPrompts.length) }
+          ].map((row) => (
+            <div key={row.label}>
+              <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/30">
+                {row.label}
+              </dt>
+              <dd className="mt-1 font-semibold text-white/75">{row.value}</dd>
+            </div>
+          ))}
         </dl>
       </section>
 
-      <section className="rounded-emovel border border-line bg-white p-5">
-        <h2 className="text-2xl font-black tracking-[-0.03em]">Generated Files</h2>
+      {/* Generated files */}
+      <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 backdrop-blur-sm">
+        <h2 className="mb-4 text-lg font-black tracking-[-0.03em] text-white">Generated Files</h2>
         {generatedFiles.length ? (
-          <div className="mt-4 max-h-[520px] overflow-auto rounded-emovel border border-line bg-cloud p-4">
-            <ul className="grid gap-2 font-mono text-xs font-bold text-slate-700">
+          <div className="max-h-[520px] overflow-auto rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <ul className="grid gap-2 font-mono text-xs text-white/40">
               {generatedFiles.map((file) => (
                 <li key={file}>{file}</li>
               ))}
             </ul>
           </div>
         ) : (
-          <p className="mt-4 text-sm font-bold text-slate-600">No generated files found for this workspace yet.</p>
+          <p className="text-sm text-white/35">
+            No generated files found for this workspace yet.
+          </p>
         )}
       </section>
     </main>

@@ -17,6 +17,36 @@ const previewCards = [
   { label: "Publish", className: "-right-8 bottom-7 rotate-[-6deg]" },
 ];
 
+type LocalProject = {
+  id: string;
+  title: string;
+  prompt: string;
+  createdAt: string;
+  status: "Generating" | "Ready";
+};
+
+function titleFromPrompt(value: string) {
+  const clean = value.trim().replace(/\s+/g, " ");
+  if (!clean) return "Untitled Workspace";
+  const withoutCommand = clean.replace(/^(create|build|design|launch|generate)\s+/i, "");
+  return withoutCommand.charAt(0).toUpperCase() + withoutCommand.slice(1, 72);
+}
+
+function createProjectId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `workspace-${Date.now().toString(36)}`;
+}
+
+function persistLocalProject(project: LocalProject) {
+  const storageKey = "emovel-projects";
+  const existing = localStorage.getItem(storageKey);
+  const projects = existing ? (JSON.parse(existing) as LocalProject[]) : [];
+  localStorage.setItem(storageKey, JSON.stringify([project, ...projects]));
+  localStorage.setItem(`emovel-project:${project.id}`, JSON.stringify(project));
+}
+
 const progressStages = [
   { id: "strategy", label: "Strategy", status: "Analyzing intent", delay: "delay-0" },
   { id: "copy", label: "Copy", status: "Generating content", delay: "delay-100" },
@@ -63,10 +93,19 @@ export default function HomePage() {
 
   const handleGenerate = useCallback(() => {
     if (stage !== "idle") return;
-    const text = prompt.trim();
-    if (text) sessionStorage.setItem("emovel-pending-prompt", text);
+    const text = prompt.trim() || "Create a premium launch workspace for a new EMOVEL product.";
+    const project: LocalProject = {
+      id: createProjectId(),
+      title: titleFromPrompt(text),
+      prompt: text,
+      createdAt: new Date().toISOString(),
+      status: "Ready",
+    };
+
+    persistLocalProject(project);
+    sessionStorage.setItem("emovel-pending-prompt", text);
     setStage("generating");
-    timerRef.current = setTimeout(() => router.push("/new-project"), 2200);
+    timerRef.current = setTimeout(() => router.push(`/workspace/${project.id}`), 900);
   }, [prompt, router, stage]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
