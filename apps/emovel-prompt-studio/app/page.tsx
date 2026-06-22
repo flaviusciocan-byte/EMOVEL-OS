@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   createProjectSchemaV1,
@@ -8,6 +8,7 @@ import {
   migrateProjectToSchemaV1,
   type ProjectSchemaV1,
   type RefinedBrief,
+  type StrategyAsset,
 } from "../lib/project-schema";
 
 const examples = [
@@ -149,19 +150,51 @@ function PlusIcon() {
 }
 
 type Stage = "idle" | "generating";
+type AiMode = "idle" | "ai" | "fallback";
+
+type AiGenerateResponse = {
+  mode?: "ai" | "fallback";
+  fallback?: boolean;
+  asset?: StrategyAsset;
+};
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState("");
   const [brief, setBrief] = useState<RefinedBrief>(emptyRefinedBrief);
   const [refineOpen, setRefineOpen] = useState(false);
   const [stage, setStage] = useState<Stage>("idle");
+  const [aiMode, setAiMode] = useState<AiMode>("idle");
   const router = useRouter();
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleGenerate = useCallback(() => {
+  const handleGenerate = useCallback(async () => {
     if (stage !== "idle") return;
     const text = prompt.trim() || "Create a premium launch workspace for a new EMOVEL product.";
     const refinedBrief = mergeBrief(text, brief);
+    setStage("generating");
+    setAiMode("idle");
+    let strategyAsset: StrategyAsset | null = null;
+
+    try {
+      const response = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          assetType: "strategy",
+          prompt: text,
+          refinedBrief,
+        }),
+      });
+      const payload = (await response.json()) as AiGenerateResponse;
+      if (payload.asset) {
+        strategyAsset = payload.asset;
+      }
+      setAiMode(payload.mode === "ai" && !payload.fallback ? "ai" : "fallback");
+    } catch {
+      setAiMode("fallback");
+    }
+
     const project = createProjectSchemaV1({
       id: createProjectId(),
       title: titleFromPrompt(text),
@@ -170,11 +203,13 @@ export default function HomePage() {
       createdAt: new Date().toISOString(),
       status: "Ready",
     });
+    if (strategyAsset) {
+      project.assets = { strategy: strategyAsset } as ProjectSchemaV1["assets"];
+    }
 
     persistLocalProject(project);
     sessionStorage.setItem("emovel-pending-prompt", text);
-    setStage("generating");
-    timerRef.current = setTimeout(() => router.push(`/workspace/${project.id}`), 900);
+    router.push(`/workspace/${project.id}`);
   }, [brief, prompt, router, stage]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -183,12 +218,6 @@ export default function HomePage() {
       handleGenerate();
     }
   }
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
 
   return (
     <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#05020A] px-4 pb-12 pt-24">
@@ -375,10 +404,10 @@ export default function HomePage() {
 
           <div className="animate-fade-in text-center">
             <p className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-[#A855F7]">
-              Building your workspace
+              {aiMode === "ai" ? "AI Mode" : aiMode === "fallback" ? "Fallback Mode" : "Building your workspace"}
             </p>
             <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] text-white">
-              Generating production assets...
+              {aiMode === "fallback" ? "Using deterministic local assets..." : "Generating production assets..."}
             </h2>
           </div>
 

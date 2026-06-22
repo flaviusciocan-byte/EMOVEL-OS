@@ -544,6 +544,7 @@ function projectWithAssets(project: LocalProject): LocalProject {
       lastUpdatedAt: completedAt,
       pipeline: completeProjectPipeline(project.id, project.createdAt, completedAt),
       assets: {
+        ...generated,
         ...project.assets,
         build: {
           ...generated.build,
