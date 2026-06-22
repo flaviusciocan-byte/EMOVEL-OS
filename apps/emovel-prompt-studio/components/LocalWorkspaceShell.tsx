@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  completeProjectPipeline,
   migrateProjectToSchemaV1,
   type ProjectAssets,
   type ProjectExportRecord,
@@ -503,6 +504,12 @@ Acceptance:
 }
 
 function projectWithAssets(project: LocalProject): LocalProject {
+  const completedAt = new Date().toISOString();
+  const completedPipeline =
+    project.pipeline.status === "completed"
+      ? project.pipeline
+      : completeProjectPipeline(project.id, project.createdAt, completedAt);
+
   if (
     project.assets &&
     "review" in project.assets &&
@@ -523,13 +530,19 @@ function projectWithAssets(project: LocalProject): LocalProject {
     "emailLaunchCopy" in project.assets.publish &&
     "finalLaunchChecklist" in project.assets.publish
   ) {
-    return project;
+    return {
+      ...project,
+      pipeline: completedPipeline,
+      lastUpdatedAt: project.pipeline.status === "completed" ? project.lastUpdatedAt : completedAt,
+    };
   }
 
   if (project.assets) {
     const generated = generateAssets(project.prompt, project.title, project.refinedBrief);
     return {
       ...project,
+      lastUpdatedAt: completedAt,
+      pipeline: completeProjectPipeline(project.id, project.createdAt, completedAt),
       assets: {
         ...project.assets,
         build: {
@@ -561,6 +574,8 @@ function projectWithAssets(project: LocalProject): LocalProject {
 
   return {
     ...project,
+    lastUpdatedAt: completedAt,
+    pipeline: completeProjectPipeline(project.id, project.createdAt, completedAt),
     assets: generateAssets(project.prompt, project.title, project.refinedBrief),
   };
 }
@@ -575,6 +590,10 @@ function overviewAsset(project: LocalProject) {
     Tone: project.refinedBrief.tone || "Inferred from prompt",
     "Launch goal": project.refinedBrief.launchGoal || "Inferred from prompt",
     "Price point": project.refinedBrief.pricePoint || "Inferred from prompt",
+    "Pipeline status": project.pipeline.status,
+    "Pipeline steps": project.pipeline.steps.map(
+      (step) => `${step.id}: ${step.status}${step.message ? ` - ${step.message}` : ""}`
+    ),
     "Generated assets": "Strategy, Offer, Copy, UX, Design, Build, Publish",
     "Source prompt": project.prompt,
   };
@@ -755,6 +774,7 @@ function exportFiles(project: LocalProject) {
       createdAt: project.createdAt,
       lastUpdatedAt: project.lastUpdatedAt,
       status: project.status,
+      pipeline: project.pipeline,
       exports: project.exports,
       versions: project.versions,
       metadata: project.metadata,
@@ -814,6 +834,7 @@ function publishPackFiles(project: LocalProject) {
             createdAt: project.createdAt,
             lastUpdatedAt: project.lastUpdatedAt,
             status: project.status,
+            pipeline: project.pipeline,
             exports: project.exports,
             versions: project.versions,
             metadata: project.metadata,
@@ -870,6 +891,7 @@ function builderPackFiles(project: LocalProject) {
             createdAt: project.createdAt,
             lastUpdatedAt: project.lastUpdatedAt,
             status: project.status,
+            pipeline: project.pipeline,
             exports: project.exports,
             versions: project.versions,
             metadata: project.metadata,

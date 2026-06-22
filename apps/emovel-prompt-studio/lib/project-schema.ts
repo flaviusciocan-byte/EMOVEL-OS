@@ -1,4 +1,31 @@
 export type ProjectStatus = "Generating" | "Ready";
+export type PipelineStatus = "idle" | "queued" | "running" | "completed" | "failed";
+export type PipelineStepStatus = "queued" | "running" | "completed" | "failed";
+export type PipelineStepId =
+  | "intent"
+  | "schema"
+  | "strategy"
+  | "offer"
+  | "copy"
+  | "ux"
+  | "design"
+  | "build"
+  | "publish"
+  | "review";
+
+export type PipelineStep = {
+  id: PipelineStepId;
+  status: PipelineStepStatus;
+  startedAt?: string;
+  completedAt?: string;
+  message: string;
+};
+
+export type ProjectPipeline = {
+  id: string;
+  status: PipelineStatus;
+  steps: PipelineStep[];
+};
 
 export type RefinedBrief = {
   productType: string;
@@ -138,6 +165,7 @@ export type ProjectSchemaV1 = {
   status: ProjectStatus;
   createdAt: string;
   lastUpdatedAt: string;
+  pipeline: ProjectPipeline;
   assets?: ProjectAssets;
   exports: ProjectExportRecord[];
   versions: ProjectVersion[];
@@ -153,6 +181,19 @@ export const emptyRefinedBrief: RefinedBrief = {
   pricePoint: "",
 };
 
+export const pipelineStepIds: PipelineStepId[] = [
+  "intent",
+  "schema",
+  "strategy",
+  "offer",
+  "copy",
+  "ux",
+  "design",
+  "build",
+  "publish",
+  "review",
+];
+
 type UnknownRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -161,6 +202,107 @@ function isRecord(value: unknown): value is UnknownRecord {
 
 function readString(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
+}
+
+function readOptionalString(value: unknown) {
+  return typeof value === "string" ? value : undefined;
+}
+
+function normalizePipelineStepStatus(value: unknown, fallback: PipelineStepStatus): PipelineStepStatus {
+  if (value === "queued" || value === "running" || value === "completed" || value === "failed") {
+    return value;
+  }
+  return fallback;
+}
+
+function pipelineMessage(step: PipelineStepId, status: PipelineStepStatus) {
+  if (status === "completed") {
+    return {
+      intent: "Prompt intent captured.",
+      schema: "Project schema v1 normalized.",
+      strategy: "Strategy asset generated.",
+      offer: "Offer asset generated.",
+      copy: "Copy asset generated.",
+      ux: "UX asset generated.",
+      design: "Design asset generated.",
+      build: "Build asset generated.",
+      publish: "Publish asset generated.",
+      review: "Review asset generated.",
+    }[step];
+  }
+
+  if (status === "failed") return "Step failed and is ready for recovery.";
+  if (status === "running") return "Step is running locally.";
+  return "Queued for local deterministic generation.";
+}
+
+export function createProjectPipeline(input: {
+  projectId: string;
+  createdAt: string;
+  status?: PipelineStatus;
+  stepStatus?: PipelineStepStatus;
+}): ProjectPipeline {
+  const stepStatus = input.stepStatus || "queued";
+  return {
+    id: `${input.projectId}-pipeline-v1`,
+    status: input.status || "queued",
+    steps: pipelineStepIds.map((id) => ({
+      id,
+      status: stepStatus,
+      startedAt: stepStatus === "completed" ? input.createdAt : undefined,
+      completedAt: stepStatus === "completed" ? input.createdAt : undefined,
+      message: pipelineMessage(id, stepStatus),
+    })),
+  };
+}
+
+export function completeProjectPipeline(projectId: string, startedAt: string, completedAt: string): ProjectPipeline {
+  return {
+    id: `${projectId}-pipeline-v1`,
+    status: "completed",
+    steps: pipelineStepIds.map((id) => ({
+      id,
+      status: "completed",
+      startedAt,
+      completedAt,
+      message: pipelineMessage(id, "completed"),
+    })),
+  };
+}
+
+function normalizePipeline(value: unknown, projectId: string, createdAt: string, hasAssets: boolean): ProjectPipeline {
+  if (!isRecord(value)) {
+    return hasAssets
+      ? completeProjectPipeline(projectId, createdAt, createdAt)
+      : createProjectPipeline({ projectId, createdAt });
+  }
+
+  const rawSteps = Array.isArray(value.steps) ? value.steps : [];
+  const steps = pipelineStepIds.map((id) => {
+    const stored = rawSteps.find((step) => isRecord(step) && step.id === id);
+    const status = normalizePipelineStepStatus(
+      isRecord(stored) ? stored.status : undefined,
+      hasAssets ? "completed" : "queued"
+    );
+
+    return {
+      id,
+      status,
+      startedAt: isRecord(stored) ? readOptionalString(stored.startedAt) : undefined,
+      completedAt: isRecord(stored) ? readOptionalString(stored.completedAt) : undefined,
+      message: isRecord(stored) ? readString(stored.message, pipelineMessage(id, status)) : pipelineMessage(id, status),
+    };
+  });
+  const failed = steps.some((step) => step.status === "failed");
+  const running = steps.some((step) => step.status === "running");
+  const completed = steps.every((step) => step.status === "completed");
+  const queued = steps.some((step) => step.status === "queued");
+
+  return {
+    id: readString(value.id, `${projectId}-pipeline-v1`),
+    status: failed ? "failed" : running ? "running" : completed ? "completed" : queued ? "queued" : "idle",
+    steps,
+  };
 }
 
 export function normalizeRefinedBrief(value: unknown): RefinedBrief {
@@ -192,6 +334,7 @@ export function createProjectSchemaV1(input: {
     status: input.status || "Ready",
     createdAt: input.createdAt,
     lastUpdatedAt: input.createdAt,
+    pipeline: createProjectPipeline({ projectId: input.id, createdAt: input.createdAt }),
     exports: [],
     versions: [
       {
@@ -222,6 +365,7 @@ export function migrateProjectToSchemaV1(value: unknown): ProjectSchemaV1 | null
   const lastUpdatedAt = readString(value.lastUpdatedAt, createdAt);
   const refinedBrief = normalizeRefinedBrief(value.refinedBrief || value.brief);
   const status = value.status === "Generating" ? "Generating" : "Ready";
+  const hasAssets = isRecord(value.assets);
   const migrated = createProjectSchemaV1({
     id,
     title,
@@ -234,7 +378,8 @@ export function migrateProjectToSchemaV1(value: unknown): ProjectSchemaV1 | null
   return {
     ...migrated,
     lastUpdatedAt,
-    assets: isRecord(value.assets) ? (value.assets as ProjectAssets) : undefined,
+    pipeline: normalizePipeline(value.pipeline, id, createdAt, hasAssets),
+    assets: hasAssets ? (value.assets as ProjectAssets) : undefined,
     exports: Array.isArray(value.exports) ? (value.exports as ProjectExportRecord[]) : [],
     versions: Array.isArray(value.versions) ? (value.versions as ProjectVersion[]) : migrated.versions,
     metadata: {
