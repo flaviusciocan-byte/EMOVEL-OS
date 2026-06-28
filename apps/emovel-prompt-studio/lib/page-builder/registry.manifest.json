@@ -1,0 +1,379 @@
+{
+  "_comment": "GENERATED FILE — do not edit. Source: lib/page-builder/registry.ts. Run scripts/generate-registry-manifest.ts to regenerate.",
+  "registry_id": "emovel.page-builder.registry",
+  "registry_version": "1.1",
+  "schema_version": "1.0.0",
+  "generated": true,
+  "generated_from": "lib/page-builder/registry.ts",
+  "shared_layer": [
+    "universe",
+    "surface",
+    "motion",
+    "spacing",
+    "anchorId",
+    "aiLock"
+  ],
+  "canonical_order": [
+    "navigation_bar",
+    "hero",
+    "logo_strip",
+    "problem",
+    "mechanism",
+    "feature_split",
+    "offer",
+    "proof",
+    "stats_bar",
+    "testimonials",
+    "pricing",
+    "faq",
+    "final_cta",
+    "footer",
+    "implementation_notes"
+  ],
+  "required_sections": [
+    "hero",
+    "problem",
+    "mechanism",
+    "offer",
+    "proof",
+    "pricing",
+    "faq",
+    "final_cta",
+    "implementation_notes"
+  ],
+  "component_count": 16,
+  "components": [
+    {
+      "componentNumber": 1,
+      "id": "hero",
+      "registryId": "emovel.section.hero",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "HeroBlock",
+      "label": "Hero",
+      "category": "conversion",
+      "required": true,
+      "requiredFields": [
+        "headline",
+        "primary_cta"
+      ],
+      "optionalFields": [
+        "subheadline",
+        "secondary_cta",
+        "proof_line"
+      ],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 2,
+      "id": "problem",
+      "registryId": "emovel.section.problem",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "ProblemBlock",
+      "label": "Problem",
+      "category": "content",
+      "required": true,
+      "requiredFields": [
+        "title",
+        "symptoms",
+        "cost_of_inaction"
+      ],
+      "optionalFields": [],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 3,
+      "id": "mechanism",
+      "registryId": "emovel.section.mechanism",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "MechanismBlock",
+      "label": "Mechanism",
+      "category": "content",
+      "required": true,
+      "requiredFields": [
+        "title",
+        "explanation",
+        "why_it_works",
+        "difference_from_alternatives"
+      ],
+      "optionalFields": [],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 4,
+      "id": "offer",
+      "registryId": "emovel.section.offer",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "OfferBlock",
+      "label": "Offer",
+      "category": "commercial",
+      "required": true,
+      "requiredFields": [
+        "title",
+        "deliverables",
+        "format",
+        "timeline"
+      ],
+      "optionalFields": [],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 5,
+      "id": "proof",
+      "registryId": "emovel.section.proof",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "ProofBlock",
+      "label": "Proof",
+      "category": "trust",
+      "required": true,
+      "requiredFields": [
+        "proof_points",
+        "credibility_signals",
+        "testimonial_placeholders"
+      ],
+      "optionalFields": [],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 6,
+      "id": "pricing",
+      "registryId": "emovel.section.pricing",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "PricingBlock",
+      "label": "Pricing",
+      "category": "commercial",
+      "required": true,
+      "requiredFields": [
+        "pilot_price",
+        "premium_upgrade",
+        "pricing_rationale",
+        "risk_reversal"
+      ],
+      "optionalFields": [],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 7,
+      "id": "faq",
+      "registryId": "emovel.section.faq",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "FaqBlock",
+      "label": "FAQ",
+      "category": "trust",
+      "required": true,
+      "requiredFields": [
+        "items"
+      ],
+      "optionalFields": [],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 8,
+      "id": "final_cta",
+      "registryId": "emovel.section.final-cta",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "FinalCtaBlock",
+      "label": "Final CTA",
+      "category": "conversion",
+      "required": true,
+      "requiredFields": [
+        "headline",
+        "cta"
+      ],
+      "optionalFields": [
+        "microcopy"
+      ],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 9,
+      "id": "implementation_notes",
+      "registryId": "emovel.meta.implementation-notes",
+      "kind": "meta",
+      "status": "implemented",
+      "surfaceOwner": "none",
+      "implementation": null,
+      "label": "Implementation Notes",
+      "category": "meta",
+      "required": true,
+      "requiredFields": [
+        "components",
+        "required_sections",
+        "missing_visual_assets",
+        "acceptance_checks"
+      ],
+      "optionalFields": [],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 10,
+      "id": "product_showcase",
+      "registryId": "emovel.section.product-showcase",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "ProductShowcaseBlock",
+      "label": "Product Showcase",
+      "category": "commerce",
+      "required": false,
+      "requiredFields": [
+        "layout",
+        "productName",
+        "headline",
+        "productAsset",
+        "productAlt",
+        "ctas",
+        "theme"
+      ],
+      "optionalFields": [
+        "eyebrow",
+        "subheadline",
+        "specText",
+        "features",
+        "nav",
+        "motion",
+        "mediaPosition",
+        "background",
+        "overlay"
+      ],
+      "supportedLayouts": [
+        "split",
+        "fullbleed"
+      ]
+    },
+    {
+      "componentNumber": 11,
+      "id": "navigation_bar",
+      "registryId": "emovel.section.navigation-bar",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "NavigationBarBlock",
+      "label": "Navigation Bar",
+      "category": "content",
+      "required": false,
+      "requiredFields": [
+        "logo_label",
+        "links"
+      ],
+      "optionalFields": [
+        "cta",
+        "transparent"
+      ],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 12,
+      "id": "footer",
+      "registryId": "emovel.section.footer",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "FooterBlock",
+      "label": "Footer",
+      "category": "content",
+      "required": false,
+      "requiredFields": [
+        "link_groups"
+      ],
+      "optionalFields": [
+        "tagline",
+        "legal"
+      ],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 13,
+      "id": "testimonials",
+      "registryId": "emovel.section.testimonials",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "TestimonialsBlock",
+      "label": "Testimonials",
+      "category": "trust",
+      "required": false,
+      "requiredFields": [
+        "items"
+      ],
+      "optionalFields": [
+        "title"
+      ],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 14,
+      "id": "logo_strip",
+      "registryId": "emovel.section.logo-strip",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "LogoStripBlock",
+      "label": "Logo Strip",
+      "category": "trust",
+      "required": false,
+      "requiredFields": [
+        "logos"
+      ],
+      "optionalFields": [
+        "title"
+      ],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 15,
+      "id": "stats_bar",
+      "registryId": "emovel.section.stats-bar",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "StatsBarBlock",
+      "label": "Stats Bar",
+      "category": "trust",
+      "required": false,
+      "requiredFields": [
+        "stats"
+      ],
+      "optionalFields": [
+        "title"
+      ],
+      "supportedLayouts": null
+    },
+    {
+      "componentNumber": 16,
+      "id": "feature_split",
+      "registryId": "emovel.section.feature-split",
+      "kind": "section",
+      "status": "implemented",
+      "surfaceOwner": "SectionSurface",
+      "implementation": "FeatureSplitBlock",
+      "label": "Feature Split",
+      "category": "content",
+      "required": false,
+      "requiredFields": [
+        "title",
+        "features"
+      ],
+      "optionalFields": [
+        "description",
+        "mediaPosition"
+      ],
+      "supportedLayouts": null
+    }
+  ]
+}

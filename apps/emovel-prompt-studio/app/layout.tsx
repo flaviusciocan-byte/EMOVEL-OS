@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body style={{ background: "#05020A" }}>
+      <body style={{ background: "#070707" }}>
         {/* Transparent overlay nav; content flows below it */}
         <NavBar />
         {/* Content manages its own top spacing for the fixed nav. */}

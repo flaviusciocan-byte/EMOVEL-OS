@@ -20,7 +20,7 @@ type ExecutionPageProps = {
 function statusBadgeClass(status: ActionQueueStatus) {
   if (status === "Done") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
   if (status === "Blocked") return "border-red-500/30 bg-red-500/10 text-red-400";
-  if (status === "In Progress") return "border-violet-500/30 bg-violet-500/10 text-violet-400";
+  if (status === "In Progress") return "border-[#C7A45A]/30 bg-[#C7A45A]/10 text-[#C7A45A]";
   return "border-white/[0.07] bg-white/[0.03] text-white/40";
 }
 
@@ -64,7 +64,7 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
     <main className="mx-auto max-w-7xl px-5 py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-violet-400">
+          <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-[#C7A45A]">
             Execution Inbox
           </p>
           <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white md:text-4xl">
@@ -91,7 +91,7 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
         <label className="grid gap-2">
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">Status</span>
           <select
-            className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2.5 text-sm font-medium text-white/70 outline-none focus:border-violet-500/40 focus:text-white/90"
+            className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2.5 text-sm font-medium text-white/70 outline-none focus:border-[#C7A45A]/40 focus:text-white/90"
             defaultValue={selectedStatus}
             name="status"
           >
@@ -104,7 +104,7 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
         <label className="grid gap-2">
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">Group</span>
           <select
-            className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2.5 text-sm font-medium text-white/70 outline-none focus:border-violet-500/40 focus:text-white/90"
+            className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2.5 text-sm font-medium text-white/70 outline-none focus:border-[#C7A45A]/40 focus:text-white/90"
             defaultValue={selectedGroup}
             name="group"
           >
@@ -115,7 +115,7 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
           </select>
         </label>
         <button
-          className="cursor-pointer self-end rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-violet-500"
+          className="cursor-pointer self-end rounded-xl bg-[#A8863F] px-5 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#C7A45A]"
           type="submit"
         >
           Apply Filters
@@ -139,12 +139,12 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
         <section className="grid gap-4">
           {tasks.map((task) => (
             <article
-              className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-sm transition hover:border-violet-500/15"
+              className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-sm transition hover:border-[#C7A45A]/15"
               key={`${task.projectSlug}-${task.id}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-violet-400">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.16em] text-[#C7A45A]">
                     {task.projectName} / {task.group}
                   </p>
                   <h2 className="mt-2 text-lg font-bold tracking-[-0.02em] text-white/90">{task.taskName}</h2>
@@ -179,7 +179,7 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
                   <input name="projectSlug" type="hidden" value={task.projectSlug} />
                   <input name="taskId" type="hidden" value={task.id} />
                   <select
-                    className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2 text-xs font-bold text-white/60 outline-none focus:border-violet-500/40"
+                    className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2 text-xs font-bold text-white/60 outline-none focus:border-[#C7A45A]/40"
                     defaultValue={task.status}
                     name="status"
                   >
@@ -187,7 +187,7 @@ export default async function ExecutionPage({ searchParams }: ExecutionPageProps
                       <option key={status} value={status}>{status}</option>
                     ))}
                   </select>
-                  <button className="cursor-pointer rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-violet-500" type="submit">
+                  <button className="cursor-pointer rounded-xl bg-[#A8863F] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#C7A45A]" type="submit">
                     Update status
                   </button>
                 </form>

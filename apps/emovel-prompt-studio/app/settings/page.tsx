@@ -62,7 +62,7 @@ function Badge({
   const base = "rounded-lg px-3 py-1.5 font-mono text-xs font-bold";
   if (variant === "violet")
     return (
-      <span className={`${base} border border-violet-500/20 bg-violet-500/10 text-violet-300`}>
+      <span className={`${base} border border-[#C7A45A]/20 bg-[#C7A45A]/10 text-[#E9D8A6]`}>
         {value}
       </span>
     );
@@ -84,7 +84,7 @@ export default function SettingsPage() {
     <main className="mx-auto max-w-3xl px-5 py-10">
       {/* Page header */}
       <div className="mb-10">
-        <p className="font-mono text-[10px] font-black uppercase tracking-[0.24em] text-violet-400">
+        <p className="font-mono text-[10px] font-black uppercase tracking-[0.24em] text-[#C7A45A]">
           System
         </p>
         <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white md:text-4xl">
@@ -102,7 +102,7 @@ export default function SettingsPage() {
             key={section.label}
             className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 backdrop-blur-sm"
           >
-            <h2 className="mb-5 font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-400">
+            <h2 className="mb-5 font-mono text-[10px] font-black uppercase tracking-[0.2em] text-[#C7A45A]">
               {section.label}
             </h2>
             <div className="grid gap-0 divide-y divide-white/[0.05]">

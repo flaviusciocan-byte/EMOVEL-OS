@@ -46,6 +46,12 @@ export function NavBar() {
 
           <div className="flex items-center gap-1">
             <Link
+              href="/prompt-engine"
+              className="px-3.5 py-2 text-sm font-medium text-white/50 transition-colors duration-200 hover:text-white/90"
+            >
+              Prompt Engine
+            </Link>
+            <Link
               href="/projects"
               className="px-3.5 py-2 text-sm font-medium text-white/50 transition-colors duration-200 hover:text-white/90"
             >

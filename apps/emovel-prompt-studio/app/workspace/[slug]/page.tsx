@@ -68,7 +68,7 @@ export default async function WorkspaceSummaryPage({ params }: WorkspaceSummaryP
       {/* Header */}
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-violet-400">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#C7A45A]">
             Workspace Summary
           </p>
           <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white md:text-4xl">
@@ -80,7 +80,7 @@ export default async function WorkspaceSummaryPage({ params }: WorkspaceSummaryP
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
-            className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-[0_0_18px_rgba(124,58,237,0.35)] transition duration-200 hover:-translate-y-0.5 hover:bg-violet-500"
+            className="rounded-xl bg-[#A8863F] px-5 py-2.5 text-sm font-bold text-white shadow-[0_0_18px_rgba(124,58,237,0.35)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#C7A45A]"
             href={`/projects/${params.slug}`}
           >
             Open Project

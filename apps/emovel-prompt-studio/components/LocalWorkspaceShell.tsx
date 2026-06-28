@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { BrandContextBadge, type BrandContextMetadata } from "./BrandContextBadge";
+import { PageBuilderPreview } from "./page-builder/PageBuilderPreview";
+import { PageBuilderHtmlRenderer } from "./page-builder/PageBuilderHtmlRenderer";
+import { AssetUploader } from "./page-builder/AssetUploader";
+import { PageBuilderExportPanel } from "./page-builder/PageBuilderExportPanel";
+import type { PageBuilderDocument, PageBuilderSectionType } from "../lib/page-builder/schema";
+import { evaluatePageBuilderReadiness } from "../lib/page-builder/readiness";
+import type { PageBuilderReadinessReview } from "../lib/page-builder/readiness";
 import Link from "next/link";
 import {
   completeProjectPipeline,
@@ -20,6 +28,16 @@ type LocalProject = ProjectSchemaV1;
 type ProjectBrief = RefinedBrief;
 type ActionNoticeTone = "success" | "error" | "info";
 type RegenerateStatus = "idle" | "running" | "done" | "failed";
+type ExportFile = { path: string; content: string };
+
+const pageBuilderRegeneratableSections = [
+  { type: "hero", label: "Hero" },
+  { type: "offer", label: "Offer" },
+  { type: "pricing", label: "Pricing" },
+  { type: "faq", label: "FAQ" },
+  { type: "final_cta", label: "Final CTA" },
+  { type: "product_showcase", label: "ProductShowcase" },
+] as const satisfies ReadonlyArray<{ type: PageBuilderSectionType; label: string }>;
 
 type WorkspaceSection = {
   id: "overview" | keyof GeneratedAssets;
@@ -395,8 +413,8 @@ Do not add backend services or API calls. Keep all generated project data in bro
     "LocalWorkspaceShell -> BuildPrepPanel and PublishPrepPanel",
   ];
   const tailwindDesignRules = [
-    "Use #05020A as the page background and avoid white surfaces",
-    "Use #8B5CF6 for primary actions and #A855F7 for glow accents",
+    "Use #070707 as the page background and avoid white surfaces",
+    "Use #C7A45A for primary actions and #E9D8A6 for glow accents",
     "Prefer rounded-2xl/rounded-3xl glass panels with thin white or violet borders",
     "Use compact uppercase mono labels for metadata",
     "Keep layouts sparse, command-like, and focused on one selected asset",
@@ -464,7 +482,7 @@ Acceptance:
       hierarchy: `Lead with the ${launchGoal} outcome, make ${audience} feel seen, then use the ${platform} route as the core surface where each asset is reviewed one at a time.`,
     },
     design: {
-      colorPalette: ["#05020A base", "#120A20 panels", "#8B5CF6 primary violet", "#A855F7 glow accent", "rgba(255,255,255,0.72) text"],
+      colorPalette: ["#070707 base", "#0D0D0D panels", "#C7A45A primary violet", "#E9D8A6 glow accent", "rgba(255,255,255,0.72) text"],
       typography: `Use ${tone} sans-serif hierarchy: confident headings, small uppercase metadata, and readable 14-16px body text for ${audience}.`,
       visualDirection: `Dark luxury AI OS adapted to ${platform}: Linear clarity, Vercel spacing discipline, Raycast command density, glass borders, and cinematic violet spotlighting.`,
     },
@@ -666,7 +684,7 @@ function EditableAssetField({
   return (
     <div className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+        <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
           {label}
         </p>
         <div className="flex gap-2">
@@ -682,7 +700,7 @@ function EditableAssetField({
               <button
                 type="button"
                 onClick={saveDraft}
-                className="rounded-xl bg-[#8B5CF6] px-3 py-1.5 text-xs font-black text-white shadow-[0_10px_28px_rgba(139,92,246,0.25)] transition hover:bg-[#A855F7]"
+                className="rounded-xl bg-[#C7A45A] px-3 py-1.5 text-xs font-black text-white shadow-[0_10px_28px_rgba(199,164,90,0.25)] transition hover:bg-[#E9D8A6]"
               >
                 Save
               </button>
@@ -691,7 +709,7 @@ function EditableAssetField({
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+              className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#E9D8A6]/35 hover:text-white"
             >
               Edit
             </button>
@@ -704,13 +722,13 @@ function EditableAssetField({
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           rows={Array.isArray(value) ? Math.max(5, value.length + 1) : 5}
-          className="mt-3 min-h-32 w-full resize-y rounded-2xl border border-[#A855F7]/24 bg-black/24 p-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/24 focus:border-[#A855F7]/60 focus:ring-2 focus:ring-[#8B5CF6]/20"
+          className="mt-3 min-h-32 w-full resize-y rounded-2xl border border-[#E9D8A6]/24 bg-black/24 p-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/24 focus:border-[#E9D8A6]/60 focus:ring-2 focus:ring-[#C7A45A]/20"
         />
       ) : Array.isArray(value) ? (
         <ul className="mt-3 grid gap-2">
           {value.map((item) => (
             <li key={item} className="flex gap-2 text-sm leading-6 text-white/64">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8B5CF6]" />
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C7A45A]" />
               <span>{item}</span>
             </li>
           ))}
@@ -759,7 +777,7 @@ function sectionForExport(id: keyof GeneratedAssets) {
   return workspaceSections.find((section) => section.id === id) || workspaceSections[0];
 }
 
-function exportFiles(project: LocalProject) {
+function exportFiles(project: LocalProject): ExportFile[] {
   const projectName = slugify(project.title);
   const root = `exports/${projectName}`;
   const markdownFiles = exportSectionIds.map((sectionId) => ({
@@ -796,7 +814,7 @@ function exportFiles(project: LocalProject) {
   ];
 }
 
-function selectedSectionExportFiles(project: LocalProject, section: WorkspaceSection) {
+function selectedSectionExportFiles(project: LocalProject, section: WorkspaceSection): ExportFile[] {
   const projectName = slugify(project.title);
   const root = `exports/${projectName}`;
   const fileName = section.id === "overview" ? "overview" : section.id;
@@ -838,7 +856,7 @@ function combinedMarkdown(project: LocalProject) {
     .join("\n---\n\n");
 }
 
-function publishPackFiles(project: LocalProject) {
+function publishPackFiles(project: LocalProject): ExportFile[] {
   const root = `exports/${slugify(project.title)}/publish-pack`;
   const publish = project.assets?.publish;
   if (!publish) return [];
@@ -887,7 +905,7 @@ function publishPackFiles(project: LocalProject) {
   ];
 }
 
-function builderPackFiles(project: LocalProject) {
+function builderPackFiles(project: LocalProject): ExportFile[] {
   const root = `exports/${slugify(project.title)}/builder-pack`;
   const build = project.assets?.build;
   if (!build) return [];
@@ -1062,7 +1080,7 @@ function concatBytes(chunks: Uint8Array[]) {
   return output;
 }
 
-function createZip(files: { path: string; content: string }[]) {
+function createZip(files: ExportFile[]) {
   const encoder = new TextEncoder();
   const now = dosDateTime(new Date());
   const localParts: Uint8Array[] = [];
@@ -1141,6 +1159,27 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     message: string;
   } | null>(null);
   const [regenerateStatus, setRegenerateStatus] = useState<RegenerateStatus>("idle");
+  const [brandContext, setBrandContext] = useState<BrandContextMetadata | undefined>(undefined);
+  // Phase 4 — Landing Page (Page Builder Core) minimal integration state.
+  const [landingStatus, setLandingStatus] = useState<RegenerateStatus>("idle");
+  const [landingErrors, setLandingErrors] = useState<string[]>([]);
+  const [landingMarkdown, setLandingMarkdown] = useState<string | null>(null);
+  const [landingDocument, setLandingDocument] = useState<PageBuilderDocument | null>(null);
+  const [landingView, setLandingView] = useState<"structure" | "page">("structure");
+  const [landingBrandContext, setLandingBrandContext] = useState<BrandContextMetadata | undefined>(undefined);
+  const [landingSectionType, setLandingSectionType] = useState<PageBuilderSectionType>("hero");
+  const [landingSectionRegenerateStatus, setLandingSectionRegenerateStatus] = useState<RegenerateStatus>("idle");
+  // Phase 11 — distinguish a refresh-loaded document from a freshly generated one,
+  // and keep raw AI output around only for an opt-in debug view on failure.
+  const [landingLoadedFromSave, setLandingLoadedFromSave] = useState(false);
+  const [landingRaw, setLandingRaw] = useState<string | null>(null);
+
+  // Deterministic readiness review, derived client-side (readiness.ts is pure —
+  // no server/store imports), so the panel can show a score without a round-trip.
+  const landingReadiness = useMemo<PageBuilderReadinessReview | null>(
+    () => (landingDocument ? evaluatePageBuilderReadiness(landingDocument) : null),
+    [landingDocument],
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem(`emovel-project:${id}`);
@@ -1164,6 +1203,39 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
       }
     }
     setLoaded(true);
+  }, [id]);
+
+  // Restore a previously generated + saved landing page (if any) after refresh.
+  // Read-only: never blocks the workspace, never shows an error when absent.
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(`/api/page-builder/document?slug=${encodeURIComponent(id)}`);
+        if (!response.ok) {
+          return;
+        }
+        const payload = (await response.json()) as {
+          ok?: boolean;
+          document?: PageBuilderDocument;
+          markdown?: string;
+        };
+        if (!cancelled && payload.ok && payload.document) {
+          setLandingDocument(payload.document);
+          setLandingMarkdown(payload.markdown ?? null);
+          setLandingLoadedFromSave(true);
+          setLandingStatus("done");
+        }
+      } catch {
+        // Network/parse error — leave the workspace untouched.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const selectedSection = useMemo(
@@ -1279,7 +1351,11 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   }
 
   async function copySection() {
-    if (!project) return;
+    console.log("[workspace] copy clicked");
+    if (!project) {
+      showActionNotice("Nothing to copy yet.", "info");
+      return;
+    }
     try {
       await writeClipboard(
         selectedSection.id === "review"
@@ -1317,7 +1393,11 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   }
 
   async function regenerateSection() {
-    if (!project?.assets) return;
+    console.log("[workspace] regenerate clicked");
+    if (!project?.assets) {
+      showActionNotice("No generated assets yet. Generate the project before regenerating.", "info");
+      return;
+    }
 
     setRegenerateStatus("running");
     showActionNotice(`Regenerating ${selectedSection.title}...`, "info");
@@ -1347,13 +1427,19 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               assetType: "strategy",
               prompt: project.prompt,
               refinedBrief: project.refinedBrief,
+              // Brand OS: send the project slug so generation can apply the saved
+              // Brand Mechanism Profile (projects/brand-os/<slug>.json). Omitted
+              // when missing, so generation stays fallback-safe.
+              ...(project.id ? { slug: project.id } : {}),
             }),
           });
           const payload = (await response.json()) as {
             mode?: "ai" | "fallback";
             fallback?: boolean;
             asset?: GeneratedAssets["strategy"];
+            brandContext?: BrandContextMetadata;
           };
+          setBrandContext(payload.brandContext ?? null);
 
           if (payload.asset) {
             strategy = payload.asset;
@@ -1361,6 +1447,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
           }
         } catch {
           mode = "deterministic fallback";
+          setBrandContext(null);
         }
 
         const assetsWithStrategy = {
@@ -1394,6 +1481,129 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     } catch {
       setRegenerateStatus("failed");
       showActionNotice(`Failed to regenerate ${selectedSection.title}.`, "error");
+    }
+  }
+
+  // Phase 4 — generate a structured PageBuilderDocument landing page for this
+  // workspace. Calls the dedicated /api/page-builder/generate endpoint, which
+  // builds a brand-aware prompt, calls the model, then normalizes + validates +
+  // persists the document server-side (projects/page-builder/<slug>.json). No
+  // visual editor, no Puck, no drag-and-drop — just generate, validate, preview.
+  async function generateLandingPage() {
+    if (!project) {
+      return;
+    }
+    setLandingStatus("running");
+    setLandingErrors([]);
+    setLandingRaw(null);
+    setLandingLoadedFromSave(false);
+    showActionNotice("Generating landing page...", "info");
+
+    try {
+      const response = await fetch("/api/page-builder/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          slug: project.id,
+          project: {
+            title: project.title,
+            prompt: project.prompt,
+            refinedBrief: project.refinedBrief,
+          },
+          assets: project.assets,
+        }),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        markdown?: string;
+        document?: PageBuilderDocument;
+        errors?: string[];
+        raw?: string;
+        brandContext?: BrandContextMetadata;
+      };
+
+      setLandingBrandContext(payload.brandContext ?? null);
+
+      if (payload.ok && payload.document) {
+        setLandingDocument(payload.document);
+        setLandingMarkdown(payload.markdown ?? null);
+        setLandingErrors([]);
+        setLandingRaw(null);
+        setLandingStatus("done");
+        showActionNotice("Landing page generated and saved.");
+      } else {
+        setLandingDocument(null);
+        setLandingMarkdown(null);
+        setLandingErrors(payload.errors ?? ["Landing page generation failed."]);
+        setLandingRaw(payload.raw ?? null);
+        setLandingStatus("failed");
+        showActionNotice("Landing page validation failed — nothing was saved.", "error");
+      }
+    } catch {
+      setLandingDocument(null);
+      setLandingMarkdown(null);
+      setLandingErrors(["Network or server error during landing page generation."]);
+      setLandingRaw(null);
+      setLandingStatus("failed");
+      showActionNotice("Failed to generate landing page.", "error");
+    }
+  }
+
+  async function regenerateLandingPageSection() {
+    if (!project || !landingDocument) {
+      showActionNotice("Generate a landing page before regenerating a section.", "info");
+      return;
+    }
+
+    setLandingSectionRegenerateStatus("running");
+    setLandingErrors([]);
+    setLandingRaw(null);
+    setLandingLoadedFromSave(false);
+    showActionNotice(`Regenerating ${landingSectionType}...`, "info");
+
+    try {
+      const response = await fetch("/api/page-builder/regenerate-section", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          slug: project.id,
+          sectionType: landingSectionType,
+          project: {
+            title: project.title,
+            prompt: project.prompt,
+            refinedBrief: project.refinedBrief,
+          },
+          assets: project.assets,
+        }),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        document?: PageBuilderDocument;
+        markdown?: string;
+        errors?: string[];
+        raw?: string;
+        regeneratedSectionType?: PageBuilderSectionType;
+      };
+
+      if (payload.ok && payload.document) {
+        setLandingDocument(payload.document);
+        setLandingMarkdown(payload.markdown ?? null);
+        setLandingErrors([]);
+        setLandingRaw(null);
+        setLandingStatus("done");
+        setLandingSectionRegenerateStatus("done");
+        showActionNotice(`${payload.regeneratedSectionType ?? landingSectionType} regenerated and saved.`);
+        window.setTimeout(() => setLandingSectionRegenerateStatus("idle"), 1600);
+      } else {
+        setLandingErrors(payload.errors ?? ["Section regeneration failed."]);
+        setLandingRaw(payload.raw ?? null);
+        setLandingSectionRegenerateStatus("failed");
+        showActionNotice("Section regeneration failed — document was not saved.", "error");
+      }
+    } catch {
+      setLandingErrors(["Network or server error during section regeneration."]);
+      setLandingSectionRegenerateStatus("failed");
+      showActionNotice("Failed to regenerate section.", "error");
     }
   }
 
@@ -1448,9 +1658,40 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     showActionNotice("Publish pack exported.");
   }
 
-  function downloadBuilderPack() {
+  async function fetchPageBuilderExportFiles(slug: string): Promise<ExportFile[]> {
+    try {
+      const response = await fetch(`/api/page-builder/export-fragment?slug=${encodeURIComponent(slug)}`);
+      if (!response.ok) {
+        return [];
+      }
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        found?: boolean;
+        files?: ExportFile[];
+      };
+
+      if (!payload.ok || !payload.found || !Array.isArray(payload.files)) {
+        return [];
+      }
+
+      return payload.files.filter(
+        (file): file is ExportFile =>
+          typeof file?.path === "string" &&
+          file.path.startsWith("page-builder/") &&
+          typeof file.content === "string",
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  async function downloadBuilderPack() {
     if (!project) return;
-    const zipBytes = createZip(builderPackFiles(project));
+    // Page Builder export is optional. If no saved document exists for this
+    // workspace slug, or the server fragment is unavailable, the normal builder
+    // pack still exports unchanged.
+    const pageBuilderFiles = await fetchPageBuilderExportFiles(project.id);
+    const zipBytes = createZip([...builderPackFiles(project), ...pageBuilderFiles]);
     const filename = `${slugify(project.title)}-builder-pack.zip`;
     recordExport("builder-pack", filename);
     downloadBlob(
@@ -1497,7 +1738,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
     return (
       <main className="mx-auto max-w-4xl px-5 py-16">
         <section className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-10 text-center backdrop-blur-xl">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#A855F7]">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#E9D8A6]">
             Workspace not found
           </p>
           <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] text-white">
@@ -1509,7 +1750,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
           </p>
           <Link
             href="/"
-            className="mt-7 inline-flex rounded-2xl bg-[#8B5CF6] px-6 py-3 text-sm font-black text-white shadow-[0_18px_55px_rgba(139,92,246,0.35)]"
+            className="mt-7 inline-flex rounded-2xl bg-[#C7A45A] px-6 py-3 text-sm font-black text-white shadow-[0_18px_55px_rgba(199,164,90,0.35)]"
           >
             Create Workspace
           </Link>
@@ -1519,20 +1760,20 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
   }
 
   return (
-    <main className="relative min-h-[calc(100dvh-64px)] overflow-hidden bg-[#05020A] px-4 py-5 text-white">
+    <main className="relative min-h-[calc(100dvh-64px)] overflow-hidden bg-[#070707] px-4 py-5 text-white">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[-160px] h-[520px] w-[880px] -translate-x-1/2 rounded-full bg-[#8B5CF6]/18 blur-3xl"
+        className="pointer-events-none absolute left-1/2 top-[-160px] h-[520px] w-[880px] -translate-x-1/2 rounded-full bg-[#C7A45A]/18 blur-3xl"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-[-240px] right-[-160px] h-[520px] w-[620px] rounded-full bg-[#A855F7]/14 blur-3xl"
+        className="pointer-events-none absolute bottom-[-240px] right-[-160px] h-[520px] w-[620px] rounded-full bg-[#E9D8A6]/14 blur-3xl"
       />
 
       <section className="relative z-10 mx-auto grid max-w-[1440px] gap-4 lg:grid-cols-[240px_minmax(0,1fr)_320px]">
         <aside className="rounded-3xl border border-white/[0.075] bg-white/[0.035] p-3 backdrop-blur-2xl lg:sticky lg:top-24 lg:h-[calc(100dvh-120px)]">
           <div className="px-3 py-3">
-            <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#A855F7]">
+            <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#E9D8A6]">
               EMOVEL
             </p>
             <h1 className="mt-2 line-clamp-2 text-xl font-black tracking-[-0.04em] text-white">
@@ -1550,14 +1791,14 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                   onClick={() => setSelectedId(section.id)}
                   className={`group flex items-center justify-between rounded-2xl px-3.5 py-3 text-left text-sm font-semibold transition ${
                     active
-                      ? "bg-[#8B5CF6]/18 text-white shadow-[inset_0_0_0_1px_rgba(168,85,247,0.22)]"
+                      ? "bg-[#C7A45A]/18 text-white shadow-[inset_0_0_0_1px_rgba(199,164,90,0.22)]"
                       : "text-white/50 hover:bg-white/[0.055] hover:text-white/82"
                   }`}
                 >
                   <span>{section.title}</span>
                   <span
                     className={`h-1.5 w-1.5 rounded-full transition ${
-                      active ? "bg-[#A855F7] shadow-[0_0_16px_#A855F7]" : "bg-white/16 group-hover:bg-white/35"
+                      active ? "bg-[#E9D8A6] shadow-[0_0_16px_#E9D8A6]" : "bg-white/16 group-hover:bg-white/35"
                     }`}
                   />
                 </button>
@@ -1569,7 +1810,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
         <section className="min-w-0 rounded-3xl border border-white/[0.08] bg-[#0B0614]/82 p-5 shadow-[0_28px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:p-7">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.07] pb-6">
             <div>
-              <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#A855F7]">
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#E9D8A6]">
                 {selectedSection.eyebrow}
               </p>
               <h2 className="mt-3 text-4xl font-black tracking-[-0.055em] text-white md:text-5xl">
@@ -1580,15 +1821,18 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setExportOpen(true)}
-                className="rounded-2xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(139,92,246,0.25)] transition hover:bg-[#A855F7]"
+                onClick={() => {
+                  console.log("[workspace] export clicked");
+                  setExportOpen(true);
+                }}
+                className="rounded-2xl bg-[#C7A45A] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(199,164,90,0.25)] transition hover:bg-[#E9D8A6]"
               >
                 Export
               </button>
               <button
                 type="button"
                 onClick={copySection}
-                className="rounded-2xl border border-white/[0.09] bg-white/[0.045] px-4 py-2.5 text-sm font-bold text-white/72 transition hover:border-[#A855F7]/35 hover:bg-[#8B5CF6]/12 hover:text-white"
+                className="rounded-2xl border border-white/[0.09] bg-white/[0.045] px-4 py-2.5 text-sm font-bold text-white/72 transition hover:border-[#E9D8A6]/35 hover:bg-[#C7A45A]/12 hover:text-white"
               >
                 {copied ? "Copied" : "Copy"}
               </button>
@@ -1596,7 +1840,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 type="button"
                 onClick={regenerateSection}
                 disabled={regenerateStatus === "running"}
-                className="rounded-2xl border border-white/[0.09] bg-white/[0.045] px-4 py-2.5 text-sm font-bold text-white/72 transition hover:border-[#A855F7]/35 hover:bg-[#8B5CF6]/12 hover:text-white disabled:cursor-wait disabled:border-white/[0.06] disabled:bg-white/[0.025] disabled:text-white/32"
+                className="rounded-2xl border border-white/[0.09] bg-white/[0.045] px-4 py-2.5 text-sm font-bold text-white/72 transition hover:border-[#E9D8A6]/35 hover:bg-[#C7A45A]/12 hover:text-white disabled:cursor-wait disabled:border-white/[0.06] disabled:bg-white/[0.025] disabled:text-white/32"
               >
                 {regenerateStatus === "running"
                   ? "Regenerating"
@@ -1615,7 +1859,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 actionNotice.tone === "error"
                   ? "border-red-400/20 bg-red-400/10 text-red-100"
                   : actionNotice.tone === "info"
-                    ? "border-[#A855F7]/22 bg-[#8B5CF6]/10 text-violet-100"
+                    ? "border-[#E9D8A6]/22 bg-[#C7A45A]/10 text-[#F1E4BD]"
                     : "border-emerald-400/20 bg-emerald-400/10 text-emerald-100"
               }`}
             >
@@ -1623,8 +1867,223 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
             </div>
           ) : null}
 
+          {selectedSection.id === "strategy" && brandContext !== undefined ? (
+            <BrandContextBadge brandContext={brandContext} slug={project?.id} />
+          ) : null}
+
+          <div className="mt-4 rounded-2xl border border-[#C7A45A]/20 bg-[#0D0D0D]/70 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
+                Landing Page · Page Builder
+              </p>
+              {landingDocument ? (
+                <span className="font-mono text-[10px] text-white/35">
+                  Saved · projects/page-builder/{project?.id}.json
+                </span>
+              ) : null}
+            </div>
+
+            {/* A. EMPTY STATE */}
+            {!landingDocument && landingStatus !== "running" && landingErrors.length === 0 ? (
+              <div className="mt-3">
+                <h3 className="text-lg font-black tracking-[-0.02em] text-white">Landing Page Builder</h3>
+                <p className="mt-1 text-sm text-white/55">
+                  Generate a structured landing page from this workspace.
+                </p>
+                <button
+                  type="button"
+                  onClick={generateLandingPage}
+                  className="mt-4 rounded-2xl border border-[#E9D8A6]/30 bg-[#C7A45A]/14 px-4 py-2.5 text-sm font-black text-white/85 transition hover:border-[#E9D8A6]/45 hover:bg-[#C7A45A]/24"
+                >
+                  Generate Landing Page
+                </button>
+              </div>
+            ) : null}
+
+            {/* B. LOADING STATE */}
+            {landingStatus === "running" ? (
+              <p className="mt-3 text-sm text-white/60">Building structured landing page…</p>
+            ) : null}
+            {landingSectionRegenerateStatus === "running" ? (
+              <p className="mt-3 text-sm text-white/60">Regenerating {landingSectionType}…</p>
+            ) : null}
+
+            {/* C. SUCCESS STATE */}
+            {landingDocument ? (
+              <div className="mt-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-black tracking-[-0.02em] text-white">
+                      {landingLoadedFromSave ? "Saved landing page loaded" : "Landing page generated"}
+                    </h3>
+                    {landingLoadedFromSave ? (
+                      <p className="mt-0.5 text-xs text-white/40">Loaded from your last saved document.</p>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={generateLandingPage}
+                    disabled={landingStatus === "running"}
+                    className="rounded-xl border border-white/[0.09] bg-white/[0.04] px-3 py-2 text-xs font-bold text-white/65 transition hover:border-[#E9D8A6]/35 hover:text-white disabled:cursor-wait disabled:opacity-50"
+                  >
+                    Regenerate Landing Page
+                  </button>
+                </div>
+
+                {/* Readiness summary */}
+                {landingReadiness ? (
+                  <div className="mt-3 rounded-2xl border border-white/[0.07] bg-black/16 p-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-2xl font-black tracking-[-0.03em] text-white">
+                        {landingReadiness.overall_score}/10
+                      </span>
+                      <span
+                        className={`rounded-full px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] ${
+                          landingReadiness.status === "strong"
+                            ? "bg-emerald-400/12 text-emerald-200"
+                            : landingReadiness.status === "acceptable"
+                              ? "bg-amber-400/12 text-amber-200"
+                              : "bg-red-400/12 text-red-200"
+                        }`}
+                      >
+                        {landingReadiness.status}
+                      </span>
+                      <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/35">
+                        Readiness
+                      </span>
+                    </div>
+                    {landingReadiness.priority_fixes.length > 0 ? (
+                      <ul className="mt-3 grid gap-1">
+                        {landingReadiness.priority_fixes.slice(0, 3).map((fix) => (
+                          <li key={fix} className="flex gap-2 text-xs leading-5 text-white/55">
+                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#C7A45A]" />
+                            <span>{fix}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 text-xs text-white/45">No priority fixes — ready for handoff.</p>
+                    )}
+                  </div>
+                ) : null}
+
+                {/* Brand context (only after generate/regenerate) */}
+                {landingBrandContext !== undefined ? (
+                  <BrandContextBadge brandContext={landingBrandContext} slug={project?.id} />
+                ) : null}
+
+                {/* Tabs */}
+                <div className="mt-3 inline-flex rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setLandingView("structure")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                      landingView === "structure" ? "bg-white/[0.08] text-white" : "text-white/50 hover:text-white/80"
+                    }`}
+                  >
+                    Structure
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLandingView("page")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                      landingView === "page" ? "bg-white/[0.08] text-white" : "text-white/50 hover:text-white/80"
+                    }`}
+                  >
+                    Page Preview
+                  </button>
+                </div>
+
+                {/* Secondary action — regenerate a single section */}
+                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-white/[0.06] bg-black/16 p-3">
+                  <span className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-white/35">
+                    Regenerate section
+                  </span>
+                  <select
+                    value={landingSectionType}
+                    onChange={(event) => setLandingSectionType(event.target.value as PageBuilderSectionType)}
+                    disabled={landingSectionRegenerateStatus === "running"}
+                    className="rounded-xl border border-white/[0.08] bg-[#090512] px-3 py-2 text-xs font-bold text-white/72 outline-none transition hover:border-[#E9D8A6]/35 disabled:cursor-wait disabled:opacity-50"
+                  >
+                    {pageBuilderRegeneratableSections.map((section) => (
+                      <option key={section.type} value={section.type}>
+                        {section.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={regenerateLandingPageSection}
+                    disabled={landingSectionRegenerateStatus === "running"}
+                    className="rounded-xl border border-[#E9D8A6]/30 bg-[#C7A45A]/12 px-3 py-2 text-xs font-black text-white/78 transition hover:border-[#E9D8A6]/45 hover:bg-[#C7A45A]/22 disabled:cursor-wait disabled:opacity-50"
+                  >
+                    {landingSectionRegenerateStatus === "running"
+                      ? "Regenerating"
+                      : landingSectionRegenerateStatus === "done"
+                        ? "Saved"
+                        : landingSectionRegenerateStatus === "failed"
+                          ? "Failed"
+                          : "Regenerate"}
+                  </button>
+                </div>
+
+                {project?.id ? (
+                  <div className="mt-3 grid gap-3">
+                    <AssetUploader slug={project.id} />
+                    <PageBuilderExportPanel slug={project.id} />
+                  </div>
+                ) : null}
+
+                <div className="mt-3">
+                  {landingView === "structure" ? (
+                    <PageBuilderPreview document={landingDocument} markdown={landingMarkdown ?? undefined} />
+                  ) : (
+                    <PageBuilderHtmlRenderer document={landingDocument} slug={project?.id} />
+                  )}
+                </div>
+
+                {landingMarkdown ? (
+                  <details className="mt-3 rounded-xl border border-white/[0.06] bg-black/20">
+                    <summary className="cursor-pointer select-none px-4 py-3 text-xs font-bold text-white/60 transition hover:text-white/80">
+                      View Markdown Export
+                    </summary>
+                    <pre className="max-h-96 overflow-auto whitespace-pre-wrap border-t border-white/[0.06] p-4 text-xs leading-5 text-white/70">
+                      {landingMarkdown}
+                    </pre>
+                  </details>
+                ) : null}
+              </div>
+            ) : null}
+
+            {/* D. ERROR STATE */}
+            {landingErrors.length > 0 ? (
+              <div className="mt-3 rounded-xl border border-red-400/20 bg-red-400/10 p-3">
+                <p className="text-xs font-bold text-red-100">
+                  {landingDocument ? "Section regeneration failed — document unchanged:" : "Validation failed — no document was saved:"}
+                </p>
+                <ul className="mt-2 grid gap-1">
+                  {landingErrors.map((error) => (
+                    <li key={error} className="text-xs leading-5 text-red-100/80">
+                      • {error}
+                    </li>
+                  ))}
+                </ul>
+                {landingRaw ? (
+                  <details className="mt-3 rounded-lg border border-red-400/20 bg-black/20">
+                    <summary className="cursor-pointer select-none px-3 py-2 text-[11px] font-bold text-red-100/70">
+                      Debug raw output
+                    </summary>
+                    <pre className="max-h-64 overflow-auto whitespace-pre-wrap border-t border-red-400/20 p-3 text-[11px] leading-5 text-red-100/70">
+                      {landingRaw}
+                    </pre>
+                  </details>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
           {selectedId !== "review" ? (
-          <article className="mt-6 overflow-hidden rounded-3xl border border-[#8B5CF6]/18 bg-[#120A20]/78">
+          <article className="mt-6 overflow-hidden rounded-3xl border border-[#C7A45A]/18 bg-[#0D0D0D]/78">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <div>
                 <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-white/34">
@@ -1634,7 +2093,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                   {selectedSection.title} deliverable
                 </h3>
               </div>
-              <span className="rounded-full border border-[#A855F7]/24 bg-[#8B5CF6]/12 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200">
+              <span className="rounded-full border border-[#E9D8A6]/24 bg-[#C7A45A]/12 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#E9D8A6]">
                 Deterministic
               </span>
             </div>
@@ -1663,14 +2122,14 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                     key={key}
                     className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4"
                   >
-                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                       {assetLabels[key] || key}
                     </p>
                     {Array.isArray(value) ? (
                       <ul className="mt-3 grid gap-2">
                         {value.map((item) => (
                           <li key={String(item)} className="flex gap-2 text-sm leading-6 text-white/64">
-                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8B5CF6]" />
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C7A45A]" />
                             <span>{String(item)}</span>
                           </li>
                         ))}
@@ -1688,10 +2147,10 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
           ) : null}
 
           {selectedId === "review" && review ? (
-            <article className="mt-4 overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#100719]/88">
+            <article className="mt-4 overflow-hidden rounded-3xl border border-[#E9D8A6]/22 bg-[#100719]/88">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
                 <div>
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                     Quality review layer
                   </p>
                   <h3 className="mt-1 text-lg font-black tracking-[-0.03em] text-white">
@@ -1702,14 +2161,14 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                   <button
                     type="button"
                     onClick={copyReviewReport}
-                    className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                    className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-white/64 transition hover:border-[#E9D8A6]/35 hover:text-white"
                   >
                     {reviewCopied ? "Copied" : "Copy review report"}
                   </button>
                   <button
                     type="button"
                     onClick={downloadReviewReport}
-                    className="rounded-2xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(139,92,246,0.26)] transition hover:bg-[#A855F7]"
+                    className="rounded-2xl bg-[#C7A45A] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(199,164,90,0.26)] transition hover:bg-[#E9D8A6]"
                   >
                     Export review report
                   </button>
@@ -1745,7 +2204,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                             item.explanation.status === "Strong"
                               ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
                               : item.explanation.status === "Acceptable"
-                                ? "border-[#A855F7]/25 bg-[#8B5CF6]/10 text-violet-200"
+                                ? "border-[#E9D8A6]/25 bg-[#C7A45A]/10 text-[#E9D8A6]"
                                 : "border-red-400/25 bg-red-400/10 text-red-200"
                           }`}
                         >
@@ -1760,7 +2219,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                         {item.explanation.whyThisScore}
                       </p>
                       <div className="mt-3 border-t border-white/[0.06] pt-3">
-                        <p className="font-mono text-[9px] font-black uppercase tracking-[0.16em] text-[#A855F7]/70">
+                        <p className="font-mono text-[9px] font-black uppercase tracking-[0.16em] text-[#E9D8A6]/70">
                           Improves with
                         </p>
                         <p className="mt-1 text-xs leading-5 text-white/48">
@@ -1772,7 +2231,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 </section>
 
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                     Review summary
                   </p>
                   <p className="mt-3 text-sm leading-7 text-white/64">{review.summary}</p>
@@ -1792,7 +2251,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                               item.status === "Strong"
                                 ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
                                 : item.status === "Acceptable"
-                                  ? "border-[#A855F7]/25 bg-[#8B5CF6]/10 text-violet-200"
+                                  ? "border-[#E9D8A6]/25 bg-[#C7A45A]/10 text-[#E9D8A6]"
                                   : "border-red-400/25 bg-red-400/10 text-red-200"
                             }`}
                           >
@@ -1829,7 +2288,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                           </ul>
                         </div>
                         <div>
-                          <p className="font-mono text-[9px] font-black uppercase tracking-[0.16em] text-[#A855F7]/70">
+                          <p className="font-mono text-[9px] font-black uppercase tracking-[0.16em] text-[#E9D8A6]/70">
                             What improves it
                           </p>
                           <p className="mt-2 text-xs leading-5 text-white/48">{item.whatImprovesIt}</p>
@@ -1843,10 +2302,10 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
           ) : null}
 
           {selectedId === "build" && build ? (
-            <article className="mt-4 overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#100719]/88">
+            <article className="mt-4 overflow-hidden rounded-3xl border border-[#E9D8A6]/22 bg-[#100719]/88">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
                 <div>
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                     Builder prep layer
                   </p>
                   <h3 className="mt-1 text-lg font-black tracking-[-0.03em] text-white">
@@ -1856,7 +2315,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 <button
                   type="button"
                   onClick={downloadBuilderPack}
-                  className="rounded-2xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(139,92,246,0.26)] transition hover:bg-[#A855F7]"
+                  className="rounded-2xl bg-[#C7A45A] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(199,164,90,0.26)] transition hover:bg-[#E9D8A6]"
                 >
                   Export builder pack
                 </button>
@@ -1865,13 +2324,13 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               <div className="grid gap-3 p-5">
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                       Next.js app brief
                     </p>
                     <button
                       type="button"
                       onClick={() => copyBuildAsset("brief", build.nextAppBrief)}
-                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#E9D8A6]/35 hover:text-white"
                     >
                       {buildCopied === "brief" ? "Copied" : "Copy build brief"}
                     </button>
@@ -1882,7 +2341,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 </section>
 
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                     Route structure
                   </p>
                   <ul className="mt-3 grid gap-2">
@@ -1895,7 +2354,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 </section>
 
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                     Component hierarchy
                   </p>
                   <ul className="mt-3 grid gap-2">
@@ -1908,13 +2367,13 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 </section>
 
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                     Tailwind design rules
                   </p>
                   <ul className="mt-3 grid gap-2">
                     {build.tailwindDesignRules.map((rule) => (
                       <li key={rule} className="flex gap-2 text-sm leading-6 text-white/62">
-                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8B5CF6]" />
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C7A45A]" />
                         <span>{rule}</span>
                       </li>
                     ))}
@@ -1923,13 +2382,13 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
 
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                       GPT-Pilot prompt
                     </p>
                     <button
                       type="button"
                       onClick={() => copyBuildAsset("gpt-pilot", build.gptPilotPrompt)}
-                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#E9D8A6]/35 hover:text-white"
                     >
                       {buildCopied === "gpt-pilot" ? "Copied" : "Copy GPT-Pilot prompt"}
                     </button>
@@ -1940,13 +2399,13 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 </section>
 
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                     Acceptance checklist
                   </p>
                   <ul className="mt-3 grid gap-2">
                     {build.acceptanceChecklist.map((item) => (
                       <li key={item} className="flex gap-2 text-sm leading-6 text-white/62">
-                        <span className="mt-1.5 h-4 w-4 shrink-0 rounded border border-[#8B5CF6]/35 bg-[#8B5CF6]/10" />
+                        <span className="mt-1.5 h-4 w-4 shrink-0 rounded border border-[#C7A45A]/35 bg-[#C7A45A]/10" />
                         <span>{item}</span>
                       </li>
                     ))}
@@ -1957,10 +2416,10 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
           ) : null}
 
           {selectedId === "publish" && publish ? (
-            <article className="mt-4 overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#100719]/88">
+            <article className="mt-4 overflow-hidden rounded-3xl border border-[#E9D8A6]/22 bg-[#100719]/88">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
                 <div>
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                     Publish prep layer
                   </p>
                   <h3 className="mt-1 text-lg font-black tracking-[-0.03em] text-white">
@@ -1970,7 +2429,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 <button
                   type="button"
                   onClick={downloadPublishPack}
-                  className="rounded-2xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(139,92,246,0.26)] transition hover:bg-[#A855F7]"
+                  className="rounded-2xl bg-[#C7A45A] px-4 py-2.5 text-sm font-black text-white shadow-[0_14px_40px_rgba(199,164,90,0.26)] transition hover:bg-[#E9D8A6]"
                 >
                   Export publish pack
                 </button>
@@ -1979,13 +2438,13 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               <div className="grid gap-3 p-5">
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                       Gumroad listing
                     </p>
                     <button
                       type="button"
                       onClick={() => copyPublishAsset("gumroad", publish.gumroadListing)}
-                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#E9D8A6]/35 hover:text-white"
                     >
                       {publishCopied === "gumroad" ? "Copied" : "Copy Gumroad listing"}
                     </button>
@@ -1997,13 +2456,13 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
 
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                       7 social posts
                     </p>
                     <button
                       type="button"
                       onClick={() => copyPublishAsset("social", publish.socialPosts.join("\n\n"))}
-                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#E9D8A6]/35 hover:text-white"
                     >
                       {publishCopied === "social" ? "Copied" : "Copy social posts"}
                     </button>
@@ -2014,7 +2473,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                         key={post}
                         className="rounded-xl border border-white/[0.045] bg-black/16 p-3 text-xs leading-5 text-white/56"
                       >
-                        <span className="font-mono text-[#A855F7]">Post {index + 1}: </span>
+                        <span className="font-mono text-[#E9D8A6]">Post {index + 1}: </span>
                         {post}
                       </p>
                     ))}
@@ -2023,13 +2482,13 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
 
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                    <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                       Email launch copy
                     </p>
                     <button
                       type="button"
                       onClick={() => copyPublishAsset("email", publish.emailLaunchCopy)}
-                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#A855F7]/35 hover:text-white"
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/64 transition hover:border-[#E9D8A6]/35 hover:text-white"
                     >
                       {publishCopied === "email" ? "Copied" : "Copy email"}
                     </button>
@@ -2040,13 +2499,13 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                 </section>
 
                 <section className="rounded-2xl border border-white/[0.055] bg-white/[0.025] p-4">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#A855F7]/75">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/75">
                     Final launch checklist
                   </p>
                   <ul className="mt-3 grid gap-2">
                     {publish.finalLaunchChecklist.map((item) => (
                       <li key={item} className="flex gap-2 text-sm leading-6 text-white/62">
-                        <span className="mt-1.5 h-4 w-4 shrink-0 rounded border border-[#8B5CF6]/35 bg-[#8B5CF6]/10" />
+                        <span className="mt-1.5 h-4 w-4 shrink-0 rounded border border-[#C7A45A]/35 bg-[#C7A45A]/10" />
                         <span>{item}</span>
                       </li>
                     ))}
@@ -2058,7 +2517,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
         </section>
 
         <aside className="rounded-3xl border border-white/[0.075] bg-white/[0.035] p-5 backdrop-blur-2xl lg:sticky lg:top-24 lg:h-[calc(100dvh-120px)]">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#A855F7]">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#E9D8A6]">
             Project
           </p>
 
@@ -2112,7 +2571,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                     ["Price", project.refinedBrief.pricePoint],
                   ].map(([label, value]) => (
                     <div key={label} className="grid gap-0.5">
-                      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-[#A855F7]/60">
+                      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-[#E9D8A6]/60">
                         {label}
                       </span>
                       <span className="text-xs leading-5 text-white/54">{value || "Inferred"}</span>
@@ -2122,8 +2581,8 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               </div>
             ) : null}
 
-            <div className="rounded-2xl border border-[#A855F7]/18 bg-[#8B5CF6]/10 p-4">
-              <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-violet-200/70">
+            <div className="rounded-2xl border border-[#E9D8A6]/18 bg-[#C7A45A]/10 p-4">
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[#E9D8A6]/70">
                 Next action
               </p>
               <p className="mt-3 text-sm leading-6 text-white/72">{selectedSection.nextAction}</p>
@@ -2148,9 +2607,9 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
             onClick={() => setExportOpen(false)}
           />
 
-          <section className="relative z-10 grid max-h-[82dvh] w-full max-w-5xl overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#090512]/95 shadow-[0_32px_120px_rgba(0,0,0,0.74),0_0_120px_rgba(139,92,246,0.22)] lg:grid-cols-[320px_minmax(0,1fr)]">
+          <section className="relative z-10 grid max-h-[82dvh] w-full max-w-5xl overflow-hidden rounded-3xl border border-[#E9D8A6]/22 bg-[#090512]/95 shadow-[0_32px_120px_rgba(0,0,0,0.74),0_0_120px_rgba(199,164,90,0.22)] lg:grid-cols-[320px_minmax(0,1fr)]">
             <aside className="border-b border-white/[0.07] p-5 lg:border-b-0 lg:border-r">
-              <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#A855F7]">
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.22em] text-[#E9D8A6]">
                 Export selected section
               </p>
               <h3 className="mt-3 text-2xl font-black tracking-[-0.045em] text-white">
@@ -2175,7 +2634,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
                       onClick={() => setExportFormat(option.id as "markdown" | "json" | "zip")}
                       className={`rounded-2xl border px-4 py-3 text-left transition ${
                         active
-                          ? "border-[#A855F7]/34 bg-[#8B5CF6]/16"
+                          ? "border-[#E9D8A6]/34 bg-[#C7A45A]/16"
                           : "border-white/[0.07] bg-white/[0.025] hover:bg-white/[0.045]"
                       }`}
                     >
@@ -2189,7 +2648,7 @@ export function LocalWorkspaceShell({ id }: LocalWorkspaceShellProps) {
               <button
                 type="button"
                 onClick={downloadExport}
-                className="mt-6 w-full rounded-2xl bg-[#8B5CF6] px-5 py-3 text-sm font-black text-white shadow-[0_18px_55px_rgba(139,92,246,0.32)] transition hover:bg-[#A855F7]"
+                className="mt-6 w-full rounded-2xl bg-[#C7A45A] px-5 py-3 text-sm font-black text-white shadow-[0_18px_55px_rgba(199,164,90,0.32)] transition hover:bg-[#E9D8A6]"
               >
                 Download {exportFormat === "zip" ? "package" : exportFormat}
               </button>

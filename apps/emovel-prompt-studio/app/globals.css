@@ -4,15 +4,15 @@
 
 /* ─── Tokens ──────────────────────────────────────────────────────────────── */
 :root {
-  --os-bg:             #05020A;
+  --os-bg:             #070707;
   --os-surface:        rgba(255, 255, 255, 0.04);
   --os-card:           rgba(18, 10, 32, 0.75);
-  --os-violet:         #8B5CF6;
-  --os-violet-e:       #A855F7;
-  --os-glow:           rgba(139, 92, 246, 0.45);
-  --os-glow-sm:        rgba(139, 92, 246, 0.25);
+  --os-violet:         #C7A45A;
+  --os-violet-e:       #E9D8A6;
+  --os-glow:           rgba(199, 164, 90, 0.45);
+  --os-glow-sm:        rgba(199, 164, 90, 0.25);
   --os-border:         rgba(255, 255, 255, 0.08);
-  --os-border-violet:  rgba(139, 92, 246, 0.25);
+  --os-border-violet:  rgba(199, 164, 90, 0.25);
   --os-text:           #FFFFFF;
   --os-text-secondary: #A1A1AA;
   --os-text-muted:     rgba(255, 255, 255, 0.3);
@@ -24,19 +24,19 @@ html {
 }
 
 body {
-  background: #05020A;
+  background: #070707;
   color: #FFFFFF;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: rgba(139, 92, 246, 0.45);
+  background: rgba(199, 164, 90, 0.45);
   color: #fff;
 }
 
 :focus-visible {
-  outline: 2px solid rgba(139, 92, 246, 0.65);
+  outline: 2px solid rgba(199, 164, 90, 0.65);
   outline-offset: 2px;
 }
 
@@ -44,11 +44,11 @@ body {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.35);
+  background: rgba(199, 164, 90, 0.35);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.55);
+  background: rgba(199, 164, 90, 0.55);
 }
 
 /* ─── Keyframes ───────────────────────────────────────────────────────────── */
@@ -69,10 +69,10 @@ body {
 
 @keyframes glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 22px rgba(139,92,246,0.4), 0 0 60px rgba(139,92,246,0.18);
+    box-shadow: 0 0 22px rgba(199,164,90,0.4), 0 0 60px rgba(199,164,90,0.18);
   }
   50% {
-    box-shadow: 0 0 32px rgba(168,85,247,0.6), 0 0 80px rgba(139,92,246,0.28);
+    box-shadow: 0 0 32px rgba(199,164,90,0.6), 0 0 80px rgba(199,164,90,0.28);
   }
 }
 
@@ -118,19 +118,19 @@ body {
 /* ─── Prompt box glass ────────────────────────────────────────────────────── */
 .prompt-glass {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025) 18%, rgba(18,10,32,0.78)),
-    rgba(18, 10, 32, 0.72);
-  border: 1px solid rgba(168, 85, 247, 0.26);
+    linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025) 22%, rgba(20,20,22,0.94)),
+    rgba(18, 18, 20, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 28px;
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.035),
-    0 26px 90px rgba(0, 0, 0, 0.58),
-    0 0 120px rgba(139, 92, 246, 0.28),
-    inset 0 0 80px rgba(139, 92, 246, 0.055),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 40px 120px rgba(0, 0, 0, 0.7),
+    0 0 80px rgba(199, 164, 90, 0.08),
+    inset 0 0 90px rgba(199, 164, 90, 0.045),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  min-height: 260px;
+  min-height: 220px;
   transition: box-shadow 350ms ease, border-color 350ms ease, transform 350ms ease;
 }
 
@@ -141,26 +141,25 @@ body {
   inset: 1px;
   border-radius: 27px;
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.045),
-    inset 0 -40px 90px rgba(139, 92, 246, 0.06);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 -40px 90px rgba(199, 164, 90, 0.05);
 }
 
 .prompt-glass:focus-within {
-  border-color: rgba(168, 85, 247, 0.62);
+  border-color: rgba(199, 164, 90, 0.55);
   transform: translateY(-1px);
   box-shadow:
-    0 0 0 1px rgba(168, 85, 247, 0.36),
-    0 30px 100px rgba(0, 0, 0, 0.62),
-    0 0 110px rgba(139, 92, 246, 0.46),
-    0 0 190px rgba(168, 85, 247, 0.22),
-    inset 0 0 88px rgba(139, 92, 246, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    0 0 0 1px rgba(199, 164, 90, 0.4),
+    0 44px 130px rgba(0, 0, 0, 0.74),
+    0 0 140px rgba(199, 164, 90, 0.16),
+    inset 0 0 100px rgba(199, 164, 90, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .generate-workspace-button {
   background-image:
-    linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 44%),
-    linear-gradient(135deg, #8B5CF6, #A855F7);
+    linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 44%),
+    linear-gradient(135deg, #C7A45A, #E9D8A6);
 }
 
 /* ─── Reduced motion ──────────────────────────────────────────────────────── */

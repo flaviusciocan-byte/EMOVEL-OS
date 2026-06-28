@@ -12,12 +12,18 @@ desktop.ini
 # Secrets
 .env
 .env.local
+.env.*.local
 *.key
 *.pem
 
 # Node
 node_modules/
 .next/
+out/
+dist/
+*.tsbuildinfo
+.turbo/
+.cache/
 
 # Python
 __pycache__/

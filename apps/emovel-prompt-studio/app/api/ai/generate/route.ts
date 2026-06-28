@@ -5,13 +5,19 @@ import { extractJsonObject, estimateTokens } from "../../../../lib/ai/json";
 import { getAvailableModelSequence, estimateCostCents } from "../../../../lib/ai/model-registry";
 import { buildStrategyPrompt } from "../../../../lib/ai/prompt";
 import { streamAiText } from "../../../../lib/ai/providers";
+import { buildBrandAwarePromptForSlug, toBrandAwareTaskType } from "../../../../lib/brand-os";
+import type { BrandAwareFallbackReason, BrandAwareTaskType } from "../../../../lib/brand-os";
 import { validateStrategyAsset } from "../../../../lib/ai/schema";
 import { emptyRefinedBrief, type RefinedBrief, type StrategyAsset } from "../../../../lib/project-schema";
 
 type GenerateRequest = {
   prompt?: string;
   refinedBrief?: Partial<RefinedBrief>;
-  assetType?: "strategy";
+  // Optional generator/asset label; mapped to a BrandAwareTaskType for brand-aware prompts.
+  assetType?: string;
+  // Optional brand slug. When present and a Brand OS profile exists, the prompt
+  // is amplified with the brand's dominant mechanism, tone, and control rules.
+  slug?: string;
 };
 
 function normalizeBrief(value: GenerateRequest["refinedBrief"]): RefinedBrief {
@@ -76,6 +82,12 @@ export async function POST(request: Request) {
 
     const models = getAvailableModelSequence();
     if (models.length === 0) {
+      console.info("[EMOVEL AI] generation", {
+        provider: null,
+        model: null,
+        mode: "FALLBACK",
+        reason: "provider_not_configured",
+      });
       return NextResponse.json(
         {
           mode: "fallback",
@@ -88,12 +100,53 @@ export async function POST(request: Request) {
       );
     }
 
-    const messages = buildStrategyPrompt({ prompt, refinedBrief });
+    const baseMessages = buildStrategyPrompt({ prompt, refinedBrief });
+
+    // Brand OS amplification: if a slug is provided, wrap the base prompt with
+    // the brand's strategic context. Fallback-safe — when no profile exists the
+    // adapter uses a neutral EMOVEL directive and never invents a mechanism. The
+    // strategy JSON contract stays intact because it lives in `basePrompt`.
+    type BrandContextMeta = {
+      hasBrandContext: boolean;
+      fallback: boolean;
+      fallbackReason?: BrandAwareFallbackReason;
+      appliedMechanism?: string;
+      taskType: BrandAwareTaskType;
+    };
+
+    let messages = baseMessages;
+    let brandAware = false;
+    let appliedMechanism: string | undefined;
+    let brandContext: BrandContextMeta | null = null;
+    if (body.slug) {
+      const aware = await buildBrandAwarePromptForSlug({
+        slug: body.slug,
+        basePrompt: baseMessages[0].content,
+        taskType: toBrandAwareTaskType(body.assetType),
+        input: baseMessages[1].content,
+      });
+      messages = aware.messages;
+      brandAware = aware.hasBrandContext;
+      appliedMechanism = aware.appliedMechanism;
+      brandContext = {
+        hasBrandContext: aware.hasBrandContext,
+        fallback: aware.fallback,
+        fallbackReason: aware.fallbackReason,
+        appliedMechanism: aware.appliedMechanism,
+        taskType: aware.taskType,
+      };
+    }
+
     const inputTokens = estimateTokens(messages.map((message) => message.content).join("\n\n"));
     const failures: string[] = [];
 
     for (const model of models) {
       try {
+        console.info("[EMOVEL AI] generation", {
+          provider: model.provider,
+          model: model.model,
+          mode: "AI",
+        });
         const result = streamAiText(model, messages);
         const raw = await collectText(result.text);
         const asset = validateStrategyAsset(extractJsonObject(raw));
@@ -104,6 +157,9 @@ export async function POST(request: Request) {
           assetType: "strategy",
           provider: model.provider,
           model: model.model,
+          brandAware,
+          appliedMechanism,
+          brandContext,
           usage: result.usage,
           estimatedCostCents: estimateCostCents(
             model,
@@ -113,10 +169,22 @@ export async function POST(request: Request) {
           asset,
         });
       } catch (error) {
+        console.info("[EMOVEL AI] generation", {
+          provider: model.provider,
+          model: model.model,
+          mode: "FALLBACK",
+          reason: error instanceof Error ? error.message : "Unknown provider failure.",
+        });
         failures.push(error instanceof Error ? error.message : "Unknown provider failure.");
       }
     }
 
+    console.info("[EMOVEL AI] generation", {
+      provider: models[0]?.provider || null,
+      model: models[0]?.model || null,
+      mode: "FALLBACK",
+      reason: "all providers failed",
+    });
     return NextResponse.json(
       {
         mode: "fallback",

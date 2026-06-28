@@ -1,0 +1,172 @@
+{
+  "_comment": "GENERATED FILE — do not edit. Source: lib/brand-mechanism/mechanisms.ts. Run scripts/generate-manifest.ts to regenerate.",
+  "module_id": "brand_mechanism_audit",
+  "module_name": "EMOVEL Brand Mechanism Audit",
+  "version": "1.0.0",
+  "type": "diagnostic_audit",
+  "input_method": "likert_scale",
+  "generated": true,
+  "generated_from": "lib/brand-mechanism/mechanisms.ts",
+  "scale": {
+    "min": 1,
+    "max": 5,
+    "labels": {
+      "1": "Deloc adevărat",
+      "2": "Puțin adevărat",
+      "3": "Parțial adevărat",
+      "4": "Adevărat",
+      "5": "Foarte adevărat"
+    }
+  },
+  "mechanisms": [
+    {
+      "id": "identificare",
+      "name": "Identificare",
+      "description": "Brandul atrage prin apartenență, valori comune, stil și sentimentul de potrivire personală.",
+      "questions": [
+        {
+          "id": "q1",
+          "text": "Clienții spun des că se regăsesc în brandul tău."
+        },
+        {
+          "id": "q2",
+          "text": "Comunicarea ta pune accent pe valori, stil și personalitate."
+        },
+        {
+          "id": "q3",
+          "text": "Brandul tău atrage oameni cu interese și stiluri similare."
+        },
+        {
+          "id": "q4",
+          "text": "Clienții cumpără pentru că simt că produsul este pentru ei."
+        }
+      ]
+    },
+    {
+      "id": "aspiratie",
+      "name": "Aspirație",
+      "description": "Brandul atrage prin promisiunea unei versiuni mai bune, mai avansate sau mai elevate a clientului.",
+      "questions": [
+        {
+          "id": "q5",
+          "text": "Brandul tău promite o versiune mai bună a clientului."
+        },
+        {
+          "id": "q6",
+          "text": "Comunicarea ta folosește un ton premium, idealizat sau orientat spre evoluție."
+        },
+        {
+          "id": "q7",
+          "text": "Clienții cumpără pentru că vor progres, status sau transformare."
+        },
+        {
+          "id": "q8",
+          "text": "Produsul tău este perceput ca un nivel superior față de alternative."
+        }
+      ]
+    },
+    {
+      "id": "siguranta",
+      "name": "Siguranță",
+      "description": "Brandul atrage prin încredere, claritate, risc redus, stabilitate și predictibilitate.",
+      "questions": [
+        {
+          "id": "q9",
+          "text": "Clienții cumpără pentru că au încredere în tine."
+        },
+        {
+          "id": "q10",
+          "text": "Comunicarea ta pune accent pe dovezi, predictibilitate și stabilitate."
+        },
+        {
+          "id": "q11",
+          "text": "Brandul tău este perceput ca o alegere cu risc redus."
+        },
+        {
+          "id": "q12",
+          "text": "Clienții apreciază claritatea și simplitatea informațiilor tale."
+        }
+      ]
+    },
+    {
+      "id": "obicei",
+      "name": "Obicei",
+      "description": "Brandul atrage prin familiaritate, repetiție, acces ușor și comportament recurent.",
+      "questions": [
+        {
+          "id": "q13",
+          "text": "Clienții revin constant fără să fie nevoie de persuasiune intensă."
+        },
+        {
+          "id": "q14",
+          "text": "Brandul tău este alegerea implicită în categoria lui."
+        },
+        {
+          "id": "q15",
+          "text": "Procesul de cumpărare este foarte simplu și rapid."
+        },
+        {
+          "id": "q16",
+          "text": "Clienții cumpără pentru că sunt deja obișnuiți cu brandul sau produsul."
+        }
+      ]
+    },
+    {
+      "id": "diferentiere",
+      "name": "Diferențiere",
+      "description": "Brandul atrage prin unicitate, contrast, poziționare clară și avantaj distinct.",
+      "questions": [
+        {
+          "id": "q17",
+          "text": "Brandul tău este perceput ca fiind clar diferit de alternative."
+        },
+        {
+          "id": "q18",
+          "text": "Comunicarea ta evidențiază un avantaj distinct."
+        },
+        {
+          "id": "q19",
+          "text": "Clienții aleg brandul tău pentru un motiv specific și ușor de explicat."
+        },
+        {
+          "id": "q20",
+          "text": "Poziționarea ta este clară și memorabilă."
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "min_score_per_mechanism": 4,
+    "max_score_per_mechanism": 20,
+    "interpretation": {
+      "dominant": {
+        "range": [
+          16,
+          20
+        ],
+        "label": "Mecanism dominant"
+      },
+      "secondary": {
+        "range": [
+          12,
+          15
+        ],
+        "label": "Mecanism secundar"
+      },
+      "weak": {
+        "range": [
+          4,
+          11
+        ],
+        "label": "Mecanism slab sau nerelevant"
+      }
+    },
+    "output_metrics": [
+      "dominant_mechanism",
+      "secondary_mechanism",
+      "mechanism_scores",
+      "mechanism_percentages",
+      "brand_congruence_level"
+    ]
+  }
+}

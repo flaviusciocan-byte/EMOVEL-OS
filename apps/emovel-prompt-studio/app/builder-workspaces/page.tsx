@@ -13,7 +13,7 @@ function formatDate(value: string) {
 function statusBadgeClass(status: BuildStatus | null) {
   if (status === "Build Failed") return "border-red-500/30 bg-red-500/10 text-red-400";
   if (status === "Build Passed" || status === "Ready to Publish") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
-  if (status === "Building") return "border-violet-500/30 bg-violet-500/10 text-violet-400";
+  if (status === "Building") return "border-[#C7A45A]/30 bg-[#C7A45A]/10 text-[#C7A45A]";
   return "border-white/[0.07] bg-white/[0.03] text-white/40";
 }
 
@@ -24,7 +24,7 @@ export default async function BuilderWorkspacesPage() {
     <main className="mx-auto max-w-7xl px-5 py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-violet-400">
+          <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-[#C7A45A]">
             Builder Workspaces
           </p>
           <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white md:text-4xl">
@@ -43,7 +43,7 @@ export default async function BuilderWorkspacesPage() {
         <section className="grid gap-3">
           {workspaces.map((workspace) => (
             <article
-              className="grid gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-sm transition hover:border-violet-500/15 md:grid-cols-[1fr_auto] md:items-center"
+              className="grid gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-sm transition hover:border-[#C7A45A]/15 md:grid-cols-[1fr_auto] md:items-center"
               key={workspace.slug}
             >
               <div>
@@ -64,7 +64,7 @@ export default async function BuilderWorkspacesPage() {
                 </div>
               </div>
               <Link
-                className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-5 py-3 text-center text-sm font-bold text-white/70 transition hover:border-violet-500/25 hover:bg-violet-500/[0.08] hover:text-violet-300"
+                className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-5 py-3 text-center text-sm font-bold text-white/70 transition hover:border-[#C7A45A]/25 hover:bg-[#C7A45A]/[0.08] hover:text-[#E9D8A6]"
                 href={`/builder-workspaces/${workspace.slug}`}
               >
                 Open workspace
@@ -79,7 +79,7 @@ export default async function BuilderWorkspacesPage() {
             Open a generated project and click Create Builder Workspace to prepare local builder files.
           </p>
           <Link
-            className="mt-6 inline-flex rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] transition hover:-translate-y-0.5 hover:bg-violet-500"
+            className="mt-6 inline-flex rounded-xl bg-[#A8863F] px-5 py-3 text-sm font-bold text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] transition hover:-translate-y-0.5 hover:bg-[#C7A45A]"
             href="/projects"
           >
             View projects

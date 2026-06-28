@@ -38,14 +38,14 @@ function titleFromFilename(filename: string) {
 function statusBadgeClass(status: BuildStatus | null) {
   if (status === "Build Failed") return "border-red-500/30 bg-red-500/10 text-red-400";
   if (status === "Build Passed" || status === "Ready to Publish") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
-  if (status === "Building") return "border-violet-500/30 bg-violet-500/10 text-violet-400";
+  if (status === "Building") return "border-[#C7A45A]/30 bg-[#C7A45A]/10 text-[#C7A45A]";
   return "border-white/[0.07] bg-white/[0.03] text-white/40";
 }
 
 function actionStatusBadgeClass(status: ActionQueueStatus) {
   if (status === "Done") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
   if (status === "Blocked") return "border-red-500/30 bg-red-500/10 text-red-400";
-  if (status === "In Progress") return "border-violet-500/30 bg-violet-500/10 text-violet-400";
+  if (status === "In Progress") return "border-[#C7A45A]/30 bg-[#C7A45A]/10 text-[#C7A45A]";
   return "border-white/[0.07] bg-white/[0.03] text-white/40";
 }
 
@@ -110,7 +110,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       {/* Header */}
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-violet-400">Project</p>
+          <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-[#C7A45A]">Project</p>
           <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white md:text-4xl">
             {projectNameFromSlug(params.slug)}
           </h1>
@@ -125,7 +125,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         </div>
         <div className="flex flex-wrap gap-2">
           <form action={createBuildHandoffAction}>
-            <button className="cursor-pointer rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_0_16px_rgba(124,58,237,0.35)] transition hover:-translate-y-0.5 hover:bg-violet-500" type="submit">
+            <button className="cursor-pointer rounded-xl bg-[#A8863F] px-4 py-2.5 text-sm font-bold text-white shadow-[0_0_16px_rgba(124,58,237,0.35)] transition hover:-translate-y-0.5 hover:bg-[#C7A45A]" type="submit">
               Create Build Handoff
             </button>
           </form>
@@ -152,12 +152,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
       {/* Info banners */}
       {hasBuildHandoff ? (
-        <p className="mb-4 rounded-xl border border-violet-500/20 bg-violet-500/[0.06] p-4 font-mono text-xs text-violet-300/70">
+        <p className="mb-4 rounded-xl border border-[#C7A45A]/20 bg-[#C7A45A]/[0.06] p-4 font-mono text-xs text-[#E9D8A6]/70">
           build-handoff.md is available below and can be copied into a builder workflow.
         </p>
       ) : null}
       {hasGptPilotHandoff ? (
-        <p className="mb-4 rounded-xl border border-violet-500/20 bg-violet-500/[0.06] p-4 font-mono text-xs text-violet-300/70">
+        <p className="mb-4 rounded-xl border border-[#C7A45A]/20 bg-[#C7A45A]/[0.06] p-4 font-mono text-xs text-[#E9D8A6]/70">
           gpt-pilot-prompt.md and README_BUILD.md are available below. GPT-Pilot has not been run.
         </p>
       ) : null}
@@ -171,7 +171,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       <section className="mb-5 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-violet-400">Execution</p>
+            <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-[#C7A45A]">Execution</p>
             <h2 className="mt-1.5 text-xl font-bold text-white">Action Queue</h2>
             <p className="mt-1.5 max-w-2xl text-sm leading-6 text-white/40">
               Creates or refreshes ACTION_QUEUE.md from the local execution plan. Task status updates rewrite the markdown file.
@@ -240,7 +240,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                           <form action={updateActionQueueStatusAction} className="flex flex-wrap gap-2">
                             <input name="taskId" type="hidden" value={task.id} />
                             <select
-                              className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2 text-xs font-bold text-white/60 outline-none focus:border-violet-500/40"
+                              className="cursor-pointer rounded-xl border border-white/[0.07] bg-os-bg px-3 py-2 text-xs font-bold text-white/60 outline-none focus:border-[#C7A45A]/40"
                               defaultValue={task.status}
                               name="status"
                             >
@@ -248,7 +248,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                                 <option key={status} value={status}>{status}</option>
                               ))}
                             </select>
-                            <button className="cursor-pointer rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-violet-500" type="submit">
+                            <button className="cursor-pointer rounded-xl bg-[#A8863F] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#C7A45A]" type="submit">
                               Update status
                             </button>
                           </form>
@@ -272,7 +272,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       <section className="mb-5 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-violet-400">Execution</p>
+            <p className="font-mono text-xs font-black uppercase tracking-[0.18em] text-[#C7A45A]">Execution</p>
             <h2 className="mt-1.5 text-xl font-bold text-white">Executor Prompts</h2>
             <p className="mt-1.5 max-w-2xl text-sm leading-6 text-white/40">
               Creates one markdown brief per Action Queue task under projects/generated/{params.slug}/executor-prompts/.

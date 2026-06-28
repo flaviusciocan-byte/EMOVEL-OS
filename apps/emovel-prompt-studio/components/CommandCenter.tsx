@@ -237,10 +237,10 @@ export function CommandCenter({ open, onOpenChange }: CommandCenterProps) {
         onClick={() => onOpenChange(false)}
       />
 
-      <section className="relative z-10 w-full max-w-2xl overflow-hidden rounded-3xl border border-[#A855F7]/22 bg-[#090512]/95 shadow-[0_32px_120px_rgba(0,0,0,0.74),0_0_120px_rgba(139,92,246,0.24)]">
+      <section className="relative z-10 w-full max-w-2xl overflow-hidden rounded-3xl border border-[#E9D8A6]/22 bg-[#090512]/95 shadow-[0_32px_120px_rgba(0,0,0,0.74),0_0_120px_rgba(199,164,90,0.24)]">
         <div className="border-b border-white/[0.07] p-4">
           <div className="flex items-center gap-3 rounded-2xl border border-white/[0.075] bg-white/[0.04] px-4 py-3">
-            <span className="h-2 w-2 rounded-full bg-[#A855F7] shadow-[0_0_18px_#A855F7]" />
+            <span className="h-2 w-2 rounded-full bg-[#E9D8A6] shadow-[0_0_18px_#E9D8A6]" />
             <input
               ref={inputRef}
               value={query}
@@ -266,7 +266,7 @@ export function CommandCenter({ open, onOpenChange }: CommandCenterProps) {
                   onMouseEnter={() => setSelectedIndex(index)}
                   onClick={() => command.run()}
                   className={`flex w-full items-center justify-between gap-4 rounded-2xl px-4 py-3 text-left transition ${
-                    selected ? "bg-[#8B5CF6]/16" : "hover:bg-white/[0.045]"
+                    selected ? "bg-[#C7A45A]/16" : "hover:bg-white/[0.045]"
                   }`}
                 >
                   <span className="min-w-0">
