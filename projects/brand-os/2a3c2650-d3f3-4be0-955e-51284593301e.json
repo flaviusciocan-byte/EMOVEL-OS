@@ -1,0 +1,45 @@
+{
+  "slug": "2a3c2650-d3f3-4be0-955e-51284593301e",
+  "module_id": "brand_mechanism_audit",
+  "module_version": "1.0.0",
+  "saved_at": "2026-06-24T00:00:00.000Z",
+  "updated_at": "2026-06-24T00:00:00.000Z",
+  "brand_os": {
+    "brand_mechanism_profile": {
+      "dominant_mechanism": "aspiratie",
+      "secondary_mechanism": "diferentiere",
+      "scores": {
+        "identificare": 12,
+        "aspiratie": 18,
+        "siguranta": 10,
+        "obicei": 7,
+        "diferentiere": 15
+      },
+      "percentages": {
+        "identificare": 60,
+        "aspiratie": 90,
+        "siguranta": 50,
+        "obicei": 35,
+        "diferentiere": 75
+      },
+      "congruence_level": "Moderată",
+      "recommended_tone": "premium, elevat, cinematic, controlat",
+      "recommended_content_types": [
+        "premium positioning posts",
+        "vision-led carousels",
+        "transformation reels"
+      ],
+      "recommended_page_structure": [
+        "Hero cu promisiune de nivel superior",
+        "Starea actuală vs starea dorită",
+        "De ce alternativele sunt insuficiente",
+        "Produsul ca sistem de upgrade",
+        "Dovezi de progres",
+        "CTA premium"
+      ],
+      "recommended_ad_structure": "Treci de la improvizație la sistem.",
+      "recommended_email_structure": "Următorul nivel nu cere mai mult zgomot. Cere structură mai bună.",
+      "strategic_warning": "Evită discounturile agresive, limbajul banal și comunicarea prea modestă. Brandul trebuie să transmită progres controlat și nivel superior."
+    }
+  }
+}
