@@ -56,9 +56,9 @@ export const PRODUCTS: Product[] = [
   {
     slug: "builder",
     name: "EMOVEL Builder",
-    tagline: "Visual page builder built for AI-native output.",
+    tagline: "Build sites and apps from a prompt — no template required.",
     description:
-      "A structured workspace for building landing pages and product sites from a prompt package. Strategy, copy, and layout — composed in one system.",
+      "A visual workspace for building full sites and apps from a structured prompt package. Not a template pack — a composable build system for product pages, SaaS UIs, and landing flows.",
     price: "$297",
     status: "coming-soon",
     href: "/products/builder",
@@ -66,14 +66,14 @@ export const PRODUCTS: Product[] = [
     badge: "Soon",
   },
   {
-    slug: "social-engine",
-    name: "Social Engine",
-    tagline: "Systematic content and growth for operator brands.",
+    slug: "social-program",
+    name: "Social Program",
+    tagline: "A complete content and growth program for operator brands.",
     description:
-      "A structured content OS for building an audience as a founder or operator. Content calendar, post frameworks, and growth system — without the hamster wheel.",
+      "A structured content and growth program for founders and operators building a brand on social. Content calendar, post frameworks, audience growth system — run as a repeatable program, not a one-off effort.",
     price: "$97",
     status: "coming-soon",
-    href: "/products/social-engine",
+    href: "/products/social-program",
     category: "OS",
     badge: "Soon",
   },

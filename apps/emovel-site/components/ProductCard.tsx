@@ -15,7 +15,7 @@ export function ProductCard({ product }: { product: Product }) {
         "group block rounded-lg border p-7 transition-all duration-200 no-underline",
         available
           ? "border-[#D9DEE7] bg-white hover:border-[#2F6BFF]/40 hover:shadow-lg"
-          : "border-[#D9DEE7] bg-[#F5F7FA] cursor-default pointer-events-none"
+          : "border-[#D9DEE7] bg-[#F5F7FA] hover:border-[#D9DEE7]/80 hover:shadow-sm"
       )}
     >
       <div className="flex items-start justify-between mb-4">
